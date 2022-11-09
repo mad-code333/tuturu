@@ -27,7 +27,7 @@ const ProjectBoardsPage = () => {
               content: project?.name || 'Untitled',
               href: `/projects/${projectId}`,
             },
-            { content: 'Task Boards', href: `/projects/${projectId}/boards` },
+            { content: 'Boards', href: `/projects/${projectId}/boards` },
           ]
         : []
     );
@@ -39,7 +39,7 @@ const ProjectBoardsPage = () => {
       {projectId && (
         <div className="flex justify-between items-center mt-2 mb-2">
           <h1 className="font-bold text-lg md:text-xl lg:text-2xl xl:text-3xl">
-            Task Boards (0)
+            Boards
           </h1>
           <button
             // onClick={showProjectEditForm}
