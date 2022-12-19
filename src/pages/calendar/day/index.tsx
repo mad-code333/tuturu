@@ -52,6 +52,20 @@ const DayViewPage: PageWithLayoutProps = () => {
     year: 'numeric',
   }).format(date);
 
+  // set prev day
+  const prevDay = () => {
+    const newDate = new Date(date);
+    newDate.setDate(newDate.getDate() - 1);
+    setDate(newDate);
+  };
+
+  // set next day
+  const nextDay = () => {
+    const newDate = new Date(date);
+    newDate.setDate(newDate.getDate() + 1);
+    setDate(newDate);
+  };
+
   return (
     <div className="flex h-full min-h-full w-full flex-col rounded-lg border border-zinc-800 bg-zinc-900 p-5">
       <div className="mb-8 flex justify-between">
@@ -96,10 +110,21 @@ const DayViewPage: PageWithLayoutProps = () => {
                   </Center>
                 ),
               },
+              {
+                value: 'schedule',
+                label: (
+                  <Center>
+                    <Link href="/calendar/schedule">Schedule</Link>
+                  </Center>
+                ),
+              },
             ]}
           />
 
-          <button className="h-full rounded-lg p-2 text-3xl hover:bg-blue-300/20">
+          <button
+            className="h-full rounded-lg p-2 text-3xl hover:bg-blue-300/20"
+            onClick={prevDay}
+          >
             <ChevronLeftIcon className="w-4" />
           </button>
           <button
@@ -108,7 +133,10 @@ const DayViewPage: PageWithLayoutProps = () => {
           >
             Today
           </button>
-          <button className="h-full rounded-lg p-2 text-3xl hover:bg-blue-300/20">
+          <button
+            className="h-full rounded-lg p-2 text-3xl hover:bg-blue-300/20"
+            onClick={nextDay}
+          >
             <ChevronRightIcon className="w-4" />
           </button>
         </div>
