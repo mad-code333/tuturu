@@ -34,7 +34,7 @@ const fetchAssignees = async (req: NextApiRequest, res: NextApiResponse) => {
   });
 
   const { taskId } = req.query;
-  if (!taskId) return res.status(401).json({ error: 'Invalid list ID' });
+  if (!taskId) return res.status(401).json({ error: 'Invalid task ID' });
 
   const { data, error } = await supabase
     .from('task_assignees')
