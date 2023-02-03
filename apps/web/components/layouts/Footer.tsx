@@ -6,7 +6,7 @@ interface FooterProps {
   hideSlogan?: boolean;
 }
 
-const Footer = ({ hideSlogan = false }) => {
+const Footer = ({ hideSlogan = false }: FooterProps) => {
   return (
     <div className="w-full text-center">
       <Divider className="mb-16 border-zinc-500/10" />
