@@ -4,4 +4,5 @@ export interface Wallet {
   balance: number;
   currency: string;
   description?: string;
+  created_at?: Date;
 }
