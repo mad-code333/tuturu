@@ -43,8 +43,8 @@ const fetchWallets = async (
   });
 
   const { data, error } = await supabase
-    .from('wallets')
-    .select('id, name, balance, currency, created_at')
+    .from('project_wallets')
+    .select('id, name, balance, currency, created_at, project_id')
     .eq('project_id', projectId);
 
   if (error) return res.status(401).json({ error: error.message });
@@ -63,7 +63,7 @@ const createWallet = async (
 
   const { name, description, balance, currency } = JSON.parse(req.body);
 
-  const { error } = await supabase.from('wallets').insert({
+  const { error } = await supabase.from('project_wallets').insert({
     name,
     description,
     balance,
