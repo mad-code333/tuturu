@@ -45,9 +45,8 @@ const fetchPrices = async (
 
   const { data, error } = await supabase
     .from('inventory_products')
-    .select('amount, price')
-    .eq('product_id', productId)
-    .single();
+    .select('product_id, unit_id ,amount, price')
+    .eq('product_id', productId);
 
   if (error) return res.status(500).json({ error: error.message });
   if (!data) return res.status(404).json({ error: 'Not found' });
@@ -65,7 +64,7 @@ const addPrices = async (
     res,
   });
 
-  const prices = JSON.parse(req.body) as ProductPrice[];
+  const { prices } = req.body as { prices: ProductPrice[] };
 
   const { error } = await supabase.from('inventory_products').insert(
     prices.map((p: ProductPrice) => ({
