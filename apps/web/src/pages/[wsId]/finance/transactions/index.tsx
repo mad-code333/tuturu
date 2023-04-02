@@ -96,7 +96,7 @@ const FinanceTransactionsPage: PageWithLayoutProps = () => {
             mode === 'grid' && 'md:grid-cols-2 xl:grid-cols-4'
           }`}
         >
-          <PlusCardButton href="/inventory/products/new" />
+          <PlusCardButton href={`/${ws.id}/finance/transactions/new`} />
           {transactions &&
             transactions?.map((c) => (
               <TransactionCard
