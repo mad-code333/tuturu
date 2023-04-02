@@ -46,7 +46,7 @@ const getTransaction = async (
 
   const { data, error } = await supabase
     .from('wallet_transactions')
-    .select('id, description, amount, created_at, wallet_id')
+    .select('id, description, amount, created_at, wallet_id, category_id')
     .eq('id', transactionId)
     .single();
 
@@ -64,13 +64,14 @@ const updateTransaction = async (
     res,
   });
 
-  const { description, amount } = req.body;
+  const { description, amount, category_id } = req.body;
 
   const { error } = await supabase
     .from('wallet_transactions')
     .update({
       description,
       amount,
+      category_id,
     })
     .eq('id', transactionId);
 
