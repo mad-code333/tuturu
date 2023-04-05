@@ -3,8 +3,7 @@ import { GetServerSidePropsContext } from 'next';
 import React from 'react';
 import HeaderX from '../components/metadata/HeaderX';
 import { showNotification } from '@mantine/notifications';
-import { useRouter } from 'next/router';
-import { AuthFormFields, authenticate } from '../utils/auth-handler';
+import { AuthFormFields } from '../utils/auth-handler';
 import AuthForm from '../components/auth/AuthForm';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import Image from 'next/image';
@@ -36,23 +35,22 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 
 const PasswordRecoveryPage = () => {
   const supabaseClient = useSupabaseClient();
-  const router = useRouter();
 
-  const handleRecovery = async ({ email, password }: AuthFormFields) => {
+  const handleRecovery = async ({ email }: AuthFormFields) => {
     try {
-      if (!password || !email) throw new Error('Please fill in all fields');
+      if (!email) throw new Error('Please fill in all fields');
 
-      await authenticate({
-        supabaseClient,
-        method: 'signup',
-        email,
-        password,
+      console.log('email', email);
+
+      await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: 'https://tuturuuu.com/reset-password',
       });
 
-      // If there is a redirectedFrom URL, redirect to it
-      // Otherwise, redirect to the homepage
-      const { redirectedFrom: nextUrl } = router.query;
-      router.push(nextUrl ? nextUrl.toString() : '/onboarding');
+      showNotification({
+        title: 'Success',
+        message: 'Password reset email sent',
+        color: 'green',
+      });
     } catch (e) {
       if (e instanceof Error)
         showNotification({
@@ -97,7 +95,6 @@ const PasswordRecoveryPage = () => {
         }}
         onSubmit={handleRecovery}
         recoveryMode
-        disabled
       />
     </>
   );
