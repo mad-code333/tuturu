@@ -18,29 +18,13 @@ export const enforceHasWorkspaces = async (ctx: GetServerSidePropsContext) => {
       },
     };
 
-  const userPromise = supabase
-    .from('users')
-    .select('id')
-    .eq('id', session.user.id)
-    .single();
-
-  const wsPromise = supabase
+  const { data, error } = await supabase
     .from('workspaces')
     .select('id')
     .eq('id', wsId)
     .single();
 
-  const [user, ws] = await Promise.all([userPromise, wsPromise]);
-
-  if (user?.error)
-    return {
-      redirect: {
-        destination: '/onboarding',
-        permanent: false,
-      },
-    };
-
-  if (ws?.error) {
+  if (!data || error) {
     return {
       notFound: true,
     };
