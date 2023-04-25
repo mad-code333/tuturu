@@ -8,14 +8,30 @@ const fetchWorkspaces = async (req: NextApiRequest, res: NextApiResponse) => {
     res,
   });
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
   const { data, error } = await supabase
-    .from('workspaces')
-    .select('id, name, workspace_members!inner(ws_id), preset')
+    .from('workspace_members')
+    .select('id:ws_id, sort_key, workspaces(name, preset)')
+    .eq('user_id', user.id)
+    .order('sort_key')
     .order('created_at', { ascending: false });
 
   if (error) return res.status(401).json({ error: error.message });
 
-  return res.status(200).json(data);
+  return res
+    .status(200)
+    .json(
+      data.map(({ id, sort_key, workspaces }) => ({
+        id,
+        sort_key,
+        ...workspaces,
+      }))
+    );
 };
 
 const createWorkspace = async (req: NextApiRequest, res: NextApiResponse) => {
