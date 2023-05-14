@@ -20,7 +20,10 @@ const WorkspaceMemberMultiSelector = ({
   const { t } = useTranslation('ws-member-selector');
 
   const apiPath = `/api/workspaces/${ws?.id}/members`;
-  const { data: users } = useSWR<User[]>(ws?.id ? apiPath : null);
+  const { data: fetchedData } = useSWR<{ data: User[] }>(
+    ws?.id ? apiPath : null
+  );
+  const users = fetchedData?.data;
 
   const data = [
     {
