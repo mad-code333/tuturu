@@ -42,7 +42,7 @@ const CalendarPage: PageWithLayoutProps = () => {
 };
 
 CalendarPage.getLayout = function getLayout(page: ReactElement) {
-  return <NestedLayout mode="infrastructure">{page}</NestedLayout>;
+  return <NestedLayout mode="calendar">{page}</NestedLayout>;
 };
 
 export default CalendarPage;
