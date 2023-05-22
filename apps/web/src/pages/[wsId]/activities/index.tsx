@@ -23,25 +23,22 @@ const WorkspaceActivitiesPage: PageWithLayoutProps = () => {
   const { t } = useTranslation('workspace-tabs');
 
   const { setRootSegment } = useSegments();
-  const { ws } = useWorkspaces();
+  const { ws, wsId } = useWorkspaces();
 
   const activitiesLabel = t('activities');
+  const loadingLabel = t('common:loading');
 
   useEffect(() => {
-    setRootSegment(
-      ws
-        ? [
-            {
-              content: ws?.name || 'Tổ chức không tên',
-              href: `/${ws.id}`,
-            },
-            { content: activitiesLabel, href: `/${ws.id}/activities` },
-          ]
-        : []
-    );
+    setRootSegment([
+      {
+        content: ws?.name ?? loadingLabel,
+        href: `/${wsId}`,
+      },
+      { content: activitiesLabel, href: `/${wsId}/activities` },
+    ]);
 
     return () => setRootSegment([]);
-  }, [ws, activitiesLabel, setRootSegment]);
+  }, [ws, wsId, loadingLabel, activitiesLabel, setRootSegment]);
 
   const [activePage, setPage] = useState(1);
 

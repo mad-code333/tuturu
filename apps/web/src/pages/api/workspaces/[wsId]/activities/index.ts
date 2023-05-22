@@ -33,24 +33,15 @@ const fetchActivities = async (
   res: NextApiResponse,
   wsId: string
 ) => {
-  const supabase = createServerSupabaseClient(
-    {
-      req,
-      res,
-    },
-    {
-      options: {
-        db: {
-          schema: 'audit',
-        },
-      },
-    }
-  );
+  const supabase = createServerSupabaseClient({
+    req,
+    res,
+  });
 
   const { ops, userIds, page, itemsPerPage } = req.query;
 
   const queryBuilder = supabase
-    .from('record_version')
+    .from('audit_logs')
     .select(
       'id, record_id, old_record_id, op, table_name, record, old_record, ts, auth_uid',
       {
