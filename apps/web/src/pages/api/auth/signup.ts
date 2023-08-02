@@ -62,9 +62,6 @@ const signup = async (
   const { data: session, error } = await supabase.auth.signUp({
     email,
     password,
-    options: {
-      emailRedirectTo: 'https://tuturuuu.com/onboarding',
-    },
   });
 
   // Check if there is an error
