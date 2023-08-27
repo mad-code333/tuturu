@@ -15,6 +15,7 @@ export default async function Layout({
     {
       name: 'Overview',
       href: `/${wsId}/finance`,
+      matchExact: true,
     },
     {
       name: 'Wallets',

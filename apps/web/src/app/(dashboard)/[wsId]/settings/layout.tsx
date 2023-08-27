@@ -15,6 +15,7 @@ export default async function Layout({
     {
       name: 'Workspace',
       href: `/${wsId}/settings`,
+      matchExact: true,
     },
     {
       name: 'Members',
