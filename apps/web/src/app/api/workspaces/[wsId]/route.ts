@@ -31,8 +31,6 @@ export async function GET(_: Request, { params: { wsId: id } }: Params) {
     .eq('workspace_members.user_id', user.id)
     .single();
 
-  console.log(data, error);
-
   if (error || !data?.workspace_members[0]?.role)
     return NextResponse.json(
       { message: 'Error fetching workspaces' },
