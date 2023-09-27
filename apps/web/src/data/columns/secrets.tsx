@@ -35,7 +35,7 @@ export const secretColumns: ColumnDef<WorkspaceSecret>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="ID" />
     ),
-    cell: ({ row }) => <div>{row.getValue('id')}</div>,
+    cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
   },
   {
     accessorKey: 'name',
