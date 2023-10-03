@@ -1,26 +1,17 @@
 'use client';
 
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import useTranslation from 'next-translate/useTranslation';
+import { Check, Hexagon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface Props {
   label: string;
-  locale?: string;
-  disabled?: boolean;
+  locale: string;
+  selected?: boolean;
 }
 
-export function LanguageDropdownItem({ label, locale, disabled }: Props) {
-  const { t } = useTranslation('common');
+export function LanguageDropdownItem({ label, locale, selected }: Props) {
   const router = useRouter();
-
-  const useDefaultLocale = async () => {
-    const res = await fetch('/api/languages', {
-      method: 'DELETE',
-    });
-
-    if (res.ok) router.refresh();
-  };
 
   const useLocale = async () => {
     const res = await fetch('/api/languages', {
@@ -37,10 +28,15 @@ export function LanguageDropdownItem({ label, locale, disabled }: Props) {
   return (
     <DropdownMenuItem
       className="cursor-pointer"
-      onClick={locale ? useLocale : useDefaultLocale}
-      disabled={disabled}
+      onClick={useLocale}
+      disabled={selected}
     >
-      {locale ? label : t('system')}
+      {selected ? (
+        <Check className="mr-2 h-4 w-4" />
+      ) : (
+        <Hexagon className="mr-2 h-4 w-4" />
+      )}
+      {label}
     </DropdownMenuItem>
   );
 }
