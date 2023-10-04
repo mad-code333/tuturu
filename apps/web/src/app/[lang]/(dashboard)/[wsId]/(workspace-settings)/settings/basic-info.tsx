@@ -10,8 +10,6 @@ interface Props {
 }
 
 export default function BasicInfo({ workspace, allowEdit }: Props) {
-  const isSystemWs = workspace.id === '00000000-0000-0000-0000-000000000000';
-
   const { t } = useTranslation('ws-settings');
 
   return (
@@ -24,7 +22,7 @@ export default function BasicInfo({ workspace, allowEdit }: Props) {
       <NameInput
         wsId={workspace.id}
         defaultValue={workspace.name}
-        disabled={!allowEdit || isSystemWs}
+        disabled={!allowEdit}
       />
     </div>
   );
