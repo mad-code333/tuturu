@@ -1,6 +1,6 @@
 {
-  "id": "Mã định danh",
+  "id": "Mã số",
   "name": "Tên",
   "amount": "Số thành viên",
-  "created_at": "Ngày tạo"
+  "created_at": "Tạo lúc"
 }
