@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
-import Chat from './chat';
 import { getSecrets, getWorkspace } from '@/lib/workspace-helper';
+import Chat from './chat';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +23,7 @@ export default async function AIPage({ params: { wsId } }: Props) {
   if (!enableChat) redirect(`/${wsId}`);
 
   const hasKey = hasAnthropicKey();
-  return <Chat id="123" wsId={wsId} hasKey={hasKey} />;
+  return <Chat wsId={wsId} hasKey={hasKey} />;
 }
 
 const hasAnthropicKey = () => {
