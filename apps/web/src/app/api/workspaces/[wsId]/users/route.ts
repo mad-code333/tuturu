@@ -16,8 +16,7 @@ export async function GET(_: Request, { params: { wsId: id } }: Params) {
   const { data, error } = await supabase
     .from('workspace_users')
     .select('*')
-    .eq('ws_id', id)
-    .single();
+    .eq('ws_id', id);
 
   if (error)
     return NextResponse.json(
@@ -25,10 +24,7 @@ export async function GET(_: Request, { params: { wsId: id } }: Params) {
       { status: 500 }
     );
 
-  return NextResponse.json({
-    ...data,
-    role: data.workspace_members[0].role,
-  });
+  return NextResponse.json(data);
 }
 
 export async function POST(req: Request, { params: { wsId: id } }: Params) {
