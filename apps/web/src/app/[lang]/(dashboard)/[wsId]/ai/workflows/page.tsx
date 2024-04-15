@@ -23,11 +23,11 @@ interface Props {
   };
 }
 
-export default async function WorkspaceProjectsPage({
+export default async function WorkspaceAIWorkflowsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const { data: projects, count } = await getProjects(wsId, searchParams);
+  const { data: projects, count } = await getWorkflows(wsId, searchParams);
   const { t } = useTranslation('ws-ai-workflows');
 
   return (
@@ -68,7 +68,7 @@ export default async function WorkspaceProjectsPage({
   );
 }
 
-async function getProjects(
+async function getWorkflows(
   wsId: string,
   {
     q,
@@ -96,8 +96,9 @@ async function getProjects(
     queryBuilder.range(start, end).limit(parsedSize);
   }
 
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
+  // const { data, error, count } = await queryBuilder;
+  // if (error) throw error;
 
-  return { data, count } as { data: TaskBoard[]; count: number };
+  // return { data, count } as { data: TaskBoard[]; count: number };
+  return { data: [], count: 0 } as { data: TaskBoard[]; count: number };
 }
