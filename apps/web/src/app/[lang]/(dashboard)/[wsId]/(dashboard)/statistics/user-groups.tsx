@@ -4,11 +4,21 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import useTranslation from 'next-translate/useTranslation';
 import { cookies } from 'next/headers';
 
-export default async function UserGroupsStatistics({ wsId }: { wsId: string }) {
+export default async function UserGroupsStatistics({
+  wsId,
+  redirect = false,
+}: {
+  wsId: string;
+  redirect?: boolean;
+}) {
   const supabase = createServerComponentClient({ cookies });
   const { t } = useTranslation();
 
-  const enabled = await verifyHasSecrets(wsId, ['ENABLE_USERS']);
+  const enabled = await verifyHasSecrets(
+    wsId,
+    ['ENABLE_USERS'],
+    redirect ? `/${wsId}` : undefined
+  );
 
   const { count: userGroups } = enabled
     ? await supabase
