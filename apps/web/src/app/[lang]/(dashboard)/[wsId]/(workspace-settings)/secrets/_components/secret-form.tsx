@@ -54,7 +54,16 @@ export default function SecretForm({ data, submitLabel, onSubmit }: Props) {
             <FormItem>
               <FormLabel>{t('name')}</FormLabel>
               <FormControl>
-                <Input placeholder="Name" autoComplete="off" {...field} />
+                <Input
+                  placeholder="Name"
+                  autoComplete="off"
+                  {...field}
+                  onChange={(e) =>
+                    field.onChange(
+                      e.target.value.replace(/\s/g, '_').toUpperCase()
+                    )
+                  }
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -48,7 +48,7 @@ export function WalletRowActions(props: WalletRowActionsProps) {
   if (!wallet.id || !wallet.ws_id) return null;
 
   return (
-    <>
+    <div className="flex gap-2 justify-end items-center">
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
@@ -69,6 +69,6 @@ export function WalletRowActions(props: WalletRowActionsProps) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </>
+    </div>
   );
 }
