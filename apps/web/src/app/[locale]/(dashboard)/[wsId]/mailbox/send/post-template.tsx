@@ -1,15 +1,18 @@
-import { UserGroupPost } from '../../users/groups/[groupId]/posts';
 import { Head, Html, Tailwind } from '@react-email/components';
 
+export interface UserGroupPost {
+  id?: string;
+  group_name?: string;
+  title: string | null;
+  content: string | null;
+  notes: string | null;
+  created_at?: string;
+}
+
 const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
-  const forcePost: Partial<UserGroupPost> = {
-    id: '1',
-    group_name: 'Group Name',
-    title: 'Post Title',
-    content: 'Post Content',
-    notes: 'Post Notes',
-  };
-  const nextPost = forcePost.id ? forcePost : post;
+  // const baseUrl = process.env.VERCEL_URL
+  //   ? `https://${process.env.VERCEL_URL}`
+  //   : '';
 
   return (
     <Html>
@@ -18,68 +21,119 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
         <div className="bg-gray-100 p-6 font-sans">
           <div className="mx-auto max-w-md overflow-hidden rounded-lg bg-white shadow-lg">
             <div className="px-6 py-4">
-              <div className="flex items-center">
-                <img
-                  className="h-10 w-10 rounded-full"
-                  src="https://via.placeholder.com/150"
-                  alt="User Avatar"
-                />
-                <div className="ml-4">
-                  <div className="text-lg font-semibold text-gray-800">
-                    Võ Hoàng Phúc
+              <div className="text-center">
+                <div className="w-full text-center">
+                  {/* <Img
+                    src={`${baseUrl}/media/logos/easy.png`}
+                    width="100"
+                    height="38"
+                  /> */}
+                  <div className="text-lg font-bold text-gray-800">
+                    Easy Center
+                  </div>
+                  <div className="font-semibold text-gray-500">
+                    24 Trường Sa - Phước Long - Nha Trang
                   </div>
                   <div className="text-sm text-gray-500">
-                    mentioned you in{' '}
-                    <a href="#" className="text-blue-500">
-                      Group: {nextPost.group_name}
-                    </a>
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    {nextPost.created_at}
+                    (0258) 6557 457 - 0977 183 161
                   </div>
                 </div>
               </div>
             </div>
-            <div className="bg-gray-50 px-6 py-4">
-              <p className="text-sm text-gray-600">Hi, member </p>
-              <p className="text-sm text-gray-600">
-                You receive a {nextPost.title}
-              </p>
-              <p className="text-sm text-gray-600">
-                Content: {nextPost.content}
-              </p>
-              <p className="text-sm text-gray-600">Notes: {nextPost.notes}</p>
-            </div>
+            <hr />
             <div className="px-6 py-4">
-              <a
-                href="tuturuu.com"
-                className="block rounded bg-blue-500 px-4 py-2 text-center font-semibold text-white"
-              >
-                Go to page
-              </a>
+              <div className="flex w-full items-center justify-center text-center">
+                <div className="w-fit rounded-full bg-black px-4 py-1 text-xs font-semibold text-white">
+                  Tiếng Việt
+                </div>
+              </div>
+              <div className="w-full pt-4 text-center">
+                <div className="text-center font-semibold uppercase">
+                  Báo cáo tiến độ học tập theo ngày
+                </div>
+                <div className="text-blue-500">{post.group_name}</div>
+              </div>
+              <p className="text-sm text-gray-600">
+                Trung tâm Easy thân gửi phụ huynh báo cáo tiến độ học tập của em{' '}
+                <span className="font-semibold text-purple-600">
+                  Huỳnh Tấn Phát
+                </span>{' '}
+                trong ngày{' '}
+                {new Date().toLocaleDateString('vi', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })}
+                , lớp{' '}
+                <span className="font-semibold underline">
+                  {post.group_name}
+                </span>
+                , với nội dung như sau:
+              </p>
+              <p className="text-sm text-gray-600">
+                <span className="font-semibold">Bài học:</span>{' '}
+                <span className="">{post.title}</span>
+              </p>
+              <p className="text-sm text-gray-600">
+                <span className="font-semibold">Nội dung:</span> {post.content}
+              </p>
             </div>
             <hr />
-            <div className="flex items-center px-6 py-4">
-              <img
-                className="h-6 w-6"
-                src="https://via.placeholder.com/24"
-                alt="Brand Logo"
-              />
+            <div className="px-6 py-4">
+              <div className="flex w-full items-center justify-center text-center">
+                <div className="w-fit rounded-full bg-black px-4 py-1 text-xs font-semibold text-white">
+                  English
+                </div>
+              </div>
+              <div className="w-full pt-4 text-center">
+                <div className="text-center font-semibold uppercase">
+                  Daily learning progress report
+                </div>
+                <div className="text-blue-500">{post.group_name}</div>
+              </div>
+              <p className="text-sm text-gray-600">
+                Easy Center kindly sends parents a report on the learning
+                progress of{' '}
+                <span className="font-semibold text-purple-600">
+                  Huỳnh Tấn Phát
+                </span>{' '}
+                on{' '}
+                {new Date().toLocaleDateString('en-US', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })}
+                , class{' '}
+                <span className="font-semibold underline">
+                  {post.group_name}
+                </span>
+                , with the following content:
+              </p>
+              <p className="text-sm text-gray-600">
+                <span className="font-semibold">Lesson:</span>{' '}
+                <span className="">{post.title}</span>
+              </p>
+              <p className="text-sm text-gray-600">
+                <span className="font-semibold">Content:</span> {post.content}
+              </p>
+            </div>
+            {/* <hr />
+            <div className="text-center px-6 py-4">
               <div className="ml-2">
-                <p className="text-sm font-semibold text-gray-700">Tuturuu</p>
+                <p className="text-sm font-semibold text-gray-700">Tuturuuu</p>
                 <p className="text-xs text-gray-500">
                   <a href="#" className="text-blue-500">
                     Tuturuuu
                   </a>{' '}
-                  make everything connected.
+                  makes everything connected.
                 </p>
               </div>
-            </div>
-            <div className="bg-gray-50 px-6 py-4">
+            </div> */}
+            {/* <div className="bg-gray-50 px-6 py-4">
               <a href="#" className="text-xs text-gray-500">
                 Update your email settings
               </a>
-            </div>
+            </div> */}
           </div>
         </div>
       </Tailwind>
@@ -87,4 +141,4 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
   );
 };
 
-export { PostEmailTemplate };
+export default PostEmailTemplate;
