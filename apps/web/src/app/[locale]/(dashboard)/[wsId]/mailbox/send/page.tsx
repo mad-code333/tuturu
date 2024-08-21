@@ -3,8 +3,8 @@ import Filters from '../../users/database/filters';
 import MailboxPosts from './posts';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
+import type { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import type { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -127,8 +127,8 @@ async function getData(
     .order('full_name', { ascending: true, nullsFirst: false });
 
   if (page && pageSize) {
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(pageSize);
+    const parsedPage = Number.parseInt(page);
+    const parsedSize = Number.parseInt(pageSize);
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize;
     queryBuilder.range(start, end).limit(parsedSize);
