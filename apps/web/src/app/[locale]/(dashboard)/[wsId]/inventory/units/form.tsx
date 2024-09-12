@@ -83,16 +83,9 @@ export function ProductUnitForm({ wsId, data, onFinish }: Props) {
           disabled={loading}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>
-                {t('transaction-category-data-table.category_name')}
-              </FormLabel>
+              <FormLabel>{t('basic-data-table.name')}</FormLabel>
               <FormControl>
-                <Input
-                  placeholder={t(
-                    'transaction-category-data-table.category_name'
-                  )}
-                  {...field}
-                />
+                <Input placeholder={t('basic-data-table.name')} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
