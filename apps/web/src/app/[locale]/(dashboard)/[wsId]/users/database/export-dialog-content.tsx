@@ -18,14 +18,36 @@ import {
 } from '@repo/ui/components/ui/select';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-
+import * as XLSX from 'xlsx';
+import { jsonToCSV } from 'react-papaparse';
 export default function ExportDialogContent({ wsId }: { wsId: string }) {
   const t = useTranslations();
 
   const [exportFileType, setExportFileType] = useState('excel');
 
-  const downloadCSV = (csv: string, filename: string) => {
+  const downloadCSV = (data: any[], filename: string) => {
+    const csv= jsonToCSV(data);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const downloadExcel = (data: any[], filename: string) => {
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: 'xlsx',
+      type: 'array',
+    });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.setAttribute('download', filename);
@@ -58,12 +80,17 @@ export default function ExportDialogContent({ wsId }: { wsId: string }) {
         </DialogClose>
         <Button
           onClick={async () => {
-            const csvData = await getData(wsId, {
+            const data = await getData(wsId, {
               from: 0,
               to: 100,
               limit: 100,
             });
-            downloadCSV(csvData, `export_${wsId}.csv`);
+
+            if (exportFileType === 'csv') {
+              downloadCSV(data, `export_${wsId}.csv`);
+            } else if (exportFileType === 'excel') {
+              downloadExcel(data, `export_${wsId}.xlsx`);
+            }
           }}
         >
           {t('common.export')}
@@ -92,7 +119,7 @@ async function getData(
     limit?: number;
     retry?: boolean;
   } = {}
-): Promise<string> {
+): Promise<any[]> { 
   const supabase = await createClient();
 
   const queryBuilder = supabase
@@ -118,12 +145,12 @@ async function getData(
   if (from && to) queryBuilder.range(from, to);
   if (limit) queryBuilder.limit(limit);
 
-  const { data, error, count: _ } = await queryBuilder.csv();
+  const { data, error, count: _ } = await queryBuilder;
 
   if (error) {
     if (!retry) throw error;
     return getData(wsId, { q, retry: false });
   }
 
-  return data as unknown as string;
+  return data;  // No need to cast as a string, since it's an array of objects
 }
