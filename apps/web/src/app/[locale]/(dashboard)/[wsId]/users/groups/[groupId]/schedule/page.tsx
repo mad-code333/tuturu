@@ -6,7 +6,8 @@ import { YearCalendar } from '@repo/ui/components/ui/custom/calendar/year-calend
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import dayjs from 'dayjs';
-import { CalendarIcon, FileUser } from 'lucide-react';
+import 'dayjs/locale/vi';
+import { CalendarIcon, FileUser, UserCheck } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -64,7 +65,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
                 <CalendarIcon className="mr-1 h-5 w-5" />
                 {t('ws-user-group-details.schedule')}
               </Button>
-              {/* {DEV_MODE && (
+              <Link href={`/${wsId}/users/groups/${groupId}/attendance`}>
                 <Button
                   type="button"
                   variant="secondary"
@@ -72,12 +73,11 @@ export default async function UserGroupDetailsPage({ params }: Props) {
                     'border font-semibold',
                     'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
                   )}
-                  disabled
                 >
                   <UserCheck className="mr-1 h-5 w-5" />
                   {t('ws-user-group-details.attendance')}
                 </Button>
-              )} */}
+              </Link>
               <Link href={`/${wsId}/users/groups/${groupId}/reports`}>
                 <Button
                   type="button"
@@ -121,7 +121,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
             groups: [
               {
                 id: s,
-                name: dayjs(s).format('D MMMM YYYY'),
+                name: dayjs(s).locale(locale).format('D MMMM YYYY'),
               },
             ],
           })) || []
