@@ -58,7 +58,7 @@ export default function CourseModuleForm({
     try {
       const res = await fetch(
         data.id
-          ? `/api/v1/workspaces/${wsId}/courses-modules/${data.id}`
+          ? `/api/v1/workspaces/${wsId}/course-modules/${data.id}`
           : `/api/v1/workspaces/${wsId}/courses/${courseId}/modules`,
         {
           method: data.id ? 'PUT' : 'POST',
