@@ -32,7 +32,7 @@ export function WorkspaceCourseRowActions({
 
   const deleteWorkspaceCourse = async () => {
     const res = await fetch(
-      `/api/v1/workspaces/${data.ws_id}/flashcards/${data.id}`,
+      `/api/v1/workspaces/${data.ws_id}/courses/${data.id}`,
       {
         method: 'DELETE',
       }
