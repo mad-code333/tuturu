@@ -31,6 +31,11 @@ export default async function WorkspaceQuizzesPage({
 
   const { data, count } = await getData(wsId, await searchParams);
 
+  const quizSets = data.map((quizSet) => ({
+    ...quizSet,
+    href: `/${wsId}/education/quiz-sets/${quizSet.id}`,
+  }));
+
   return (
     <>
       <FeatureSummary
@@ -43,7 +48,7 @@ export default async function WorkspaceQuizzesPage({
       />
       <Separator className="my-4" />
       <CustomDataTable
-        data={data}
+        data={quizSets}
         columnGenerator={geQuizSetColumns}
         namespace="quiz-set-data-table"
         count={count}
@@ -94,8 +99,6 @@ async function getData(
     if (!retry) throw error;
     return getData(wsId, { q, pageSize, retry: false });
   }
-
-  console.log(JSON.stringify(data, null, 2));
 
   return { data, count } as { data: WorkspaceQuizSet[]; count: number };
 }

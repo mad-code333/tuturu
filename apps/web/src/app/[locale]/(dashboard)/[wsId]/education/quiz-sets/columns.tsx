@@ -95,7 +95,7 @@ export const geQuizSetColumns = (
                 key={`${module.course_name}-${module.module_name}`}
                 className="bg-foreground/5 w-fit rounded border px-2 py-0.5 hover:underline"
               >
-                {module.course_name} - {module.module_name}
+                {module.course_name} / {module.module_name}
               </Link>
             ))
           : '-'}
