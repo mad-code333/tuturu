@@ -1,4 +1,5 @@
 import Navbar from '../navbar';
+import NavbarPadding from '../navbar-padding';
 import Footer from '@/components/layouts/Footer';
 import React from 'react';
 
@@ -6,14 +7,19 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-export default function Layout({ children }: LayoutProps) {
+export default async function Layout({ children }: LayoutProps) {
   return (
     <>
       <Navbar hideMetadata />
-      <div id="main-content" className="flex flex-col pt-[53px]">
-        {children}
-      </div>
-      <Footer />
+      <NavbarPadding>
+        <div
+          id="main-content"
+          className="flex h-screen max-h-screen min-h-screen flex-col overflow-y-auto"
+        >
+          <div className="flex-none">{children}</div>
+          <Footer />
+        </div>
+      </NavbarPadding>
     </>
   );
 }
