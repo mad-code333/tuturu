@@ -82,7 +82,7 @@ export class ExcelCrawler {
   }
 
   async preloadFile(url: string): Promise<{
-    workbook: XLSX.WorkBook;
+    data: any[][];
     sheetInfo: SheetInfo;
   }> {
     const arrayBuffer = await this.fetchExcelFile(url);
@@ -96,8 +96,15 @@ export class ExcelCrawler {
     const worksheet = workbook.Sheets[sheetName];
     const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
 
+    // Get all data as array of arrays
+    const data = XLSX.utils.sheet_to_json(worksheet, {
+      header: 1,
+      raw: false,
+      defval: '',
+    }) as any[][];
+
     return {
-      workbook,
+      data,
       sheetInfo: {
         name: sheetName,
         rows: range.e.r + 1,
@@ -107,28 +114,30 @@ export class ExcelCrawler {
   }
 
   getPreviewFromWorkbook(
-    workbook: XLSX.WorkBook,
+    data: XLSX.WorkBook | any[][],
     sheetName: string,
     headerRow: number,
     dataStartRow: number
   ): { headers: string[]; preview: any[][]; error?: string } {
     try {
-      const worksheet = workbook.Sheets[sheetName];
-
-      if (!worksheet) {
-        return {
-          headers: [],
-          preview: [],
-          error: 'No valid worksheet found',
-        };
+      let allData: any[][];
+      if (Array.isArray(data)) {
+        allData = data;
+      } else {
+        const worksheet = data.Sheets[sheetName];
+        if (!worksheet) {
+          return {
+            headers: [],
+            preview: [],
+            error: 'No valid worksheet found',
+          };
+        }
+        allData = XLSX.utils.sheet_to_json(worksheet, {
+          header: 1,
+          raw: false,
+          defval: '',
+        }) as any[][];
       }
-
-      // Get all data as array of arrays
-      const allData = XLSX.utils.sheet_to_json(worksheet, {
-        header: 1,
-        raw: false, // Convert all cells to strings
-        defval: '', // Use empty string for empty cells
-      }) as any[][];
 
       if (!allData || allData.length === 0) {
         return {
