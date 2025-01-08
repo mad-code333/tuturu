@@ -1,5 +1,4 @@
 import { getColumns } from './columns';
-import { Executions } from './executions';
 import { CustomDataTable } from '@/components/custom-data-table';
 import type { WorkspaceCronExecution } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
@@ -55,7 +54,7 @@ export default async function WorkspaceCronExecutionsPage({
         }}
       />
 
-      <Executions />
+      {/* {DEV_MODE && <Executions />} */}
     </>
   );
 }
