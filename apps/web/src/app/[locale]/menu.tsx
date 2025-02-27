@@ -2,7 +2,6 @@
 
 import { AuthButton } from './auth-button';
 import { NavItem, useNavigation } from './shared/navigation-config';
-import { ThemeToggle } from './theme-toggle';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
@@ -11,6 +10,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
+import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
 import {
   Sheet,
   SheetContent,

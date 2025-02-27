@@ -1,13 +1,13 @@
-import LogoTitle from './logo-title';
+import LocalWorkspaceSelect from './local-workspace-select';
 import NavbarActions from './navbar-actions';
 import NavbarSeparator from './navbar-separator';
 import { MainNavigationMenu } from './navigation-menu';
 import ServerMenu from './server-menu';
-import WorkspaceSelect from './workspace-select';
+import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { Navbar as SharedNavbar } from '@tuturuuu/ui/navbar';
 import { Suspense } from 'react';
 
-export default function Navbar({
+export default async function Navbar({
   hideMetadata = false,
   onlyOnMobile = false,
 }: {
@@ -40,7 +40,7 @@ export default function Navbar({
             <div className="h-10 w-32 animate-pulse rounded-lg bg-foreground/5" />
           }
         >
-          <WorkspaceSelect />
+          <LocalWorkspaceSelect />
         </Suspense>
       }
       navigationMenu={<MainNavigationMenu />}
