@@ -21,7 +21,7 @@ export default async function RootLayout({
 
   const { data: whitelisted } = await sbAdmin
     .from('nova_roles')
-    .select('enabled')
+    .select('enabled, is_admin')
     .eq('email', user?.email as string)
     .maybeSingle();
 
@@ -29,7 +29,7 @@ export default async function RootLayout({
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar />
+      <Sidebar isAdmin={whitelisted?.is_admin || false} />
       <main className="flex-1 overflow-y-auto">{children}</main>
     </div>
   );
