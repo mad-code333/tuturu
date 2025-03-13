@@ -114,6 +114,11 @@ export default function PromptForm({ problem }: { problem: Problem }) {
         }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to process submission');
+      }
+
       const data = await response.json();
       const output = data.response.feedback || '';
       const score = data.response.score || 0;
@@ -166,6 +171,11 @@ export default function PromptForm({ problem }: { problem: Problem }) {
   };
 
   const handleTestCustomCase = async () => {
+    if (!input.trim()) {
+      setError('Prompt cannot be empty when testing a custom case.');
+      return;
+    }
+
     if (!customTestCase.trim()) {
       setError('Custom test case cannot be empty.');
       return;
