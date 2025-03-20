@@ -17,11 +17,13 @@ import { useState } from 'react';
 interface EditChallengeDialogProps {
   challenge: NovaChallenge;
   trigger: React.ReactNode;
+  onSuccessfulEdit?: () => void;
 }
 
 export default function EditChallengeDialog({
   challenge,
   trigger,
+  onSuccessfulEdit,
 }: EditChallengeDialogProps) {
   const router = useRouter();
 
@@ -38,7 +40,7 @@ export default function EditChallengeDialog({
       : null,
   };
 
-  const onSubmit = async (data: ChallengeFormValues) => {
+  const onSubmit = async (values: ChallengeFormValues) => {
     try {
       setIsSubmitting(true);
 
@@ -47,7 +49,7 @@ export default function EditChallengeDialog({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(values),
       });
 
       if (!response.ok) {
@@ -60,6 +62,12 @@ export default function EditChallengeDialog({
       });
 
       setOpen(false);
+
+      // Call the onSuccessfulEdit callback if provided
+      if (onSuccessfulEdit) {
+        onSuccessfulEdit();
+      }
+
       router.refresh();
     } catch (error) {
       console.error('Error saving challenge:', error);
@@ -76,7 +84,7 @@ export default function EditChallengeDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Edit Challenge</DialogTitle>
           <DialogDescription>
