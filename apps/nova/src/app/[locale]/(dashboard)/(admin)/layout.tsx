@@ -16,15 +16,19 @@ export default async function RootLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user?.id) redirect('/login');
+  if (!user?.email) redirect('/login');
 
   const { data: whitelisted } = await sbAdmin
     .from('nova_roles')
-    .select('enabled, allow_challenge_management')
-    .eq('email', user?.email as string)
+    .select('enabled, allow_challenge_management, allow_role_management')
+    .eq('email', user.email)
     .maybeSingle();
 
-  if (!whitelisted?.enabled || !whitelisted?.allow_challenge_management)
+  if (
+    !whitelisted?.enabled ||
+    (!whitelisted?.allow_challenge_management &&
+      !whitelisted?.allow_role_management)
+  )
     redirect('/home');
 
   return children;
