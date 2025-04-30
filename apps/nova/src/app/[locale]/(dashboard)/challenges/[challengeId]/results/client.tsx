@@ -238,7 +238,7 @@ export default function ResultClient({
             </div>
           </div>
           <Button
-            onClick={() => router.push(`/challenges/${challengeId}`)}
+            onClick={() => router.push(`/challenges`)}
             variant="outline"
             className="gap-2"
           >

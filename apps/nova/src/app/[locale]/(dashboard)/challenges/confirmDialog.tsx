@@ -1,6 +1,5 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
 import type { NovaChallenge } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -50,12 +49,11 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const form = useForm<FormValues>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       password: challenge.password_hash !== null ? '' : undefined,
@@ -115,8 +113,6 @@ export function ConfirmDialog({
         });
 
         if (response.ok) {
-          // Invalidate challenges query to update the UI with the new session
-          queryClient.invalidateQueries({ queryKey: ['challenges'] });
           router.push(`/challenges/${challenge.id}`);
         } else {
           toast({

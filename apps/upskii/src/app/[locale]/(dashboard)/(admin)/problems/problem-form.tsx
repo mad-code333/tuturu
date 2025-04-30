@@ -86,7 +86,7 @@ export default function ProblemForm({
   const [challenges, setChallenges] = useState<NovaChallenge[]>([]);
 
   // Initialize form with default values
-  const form = useForm<ProblemFormValues>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',

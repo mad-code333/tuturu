@@ -75,7 +75,7 @@ export default function TeamDetailsClient({
     }),
   });
 
-  const emailForm = useForm<z.infer<typeof emailFormSchema>>({
+  const emailForm = useForm({
     resolver: zodResolver(emailFormSchema),
     defaultValues: {
       email: '',
