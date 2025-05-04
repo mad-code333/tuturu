@@ -1,5 +1,5 @@
+import { getQuizSetColumns } from './columns';
 import QuizForm from './form';
-import { getQuizSetColumns } from '@/app/[locale]/(dashboard)/education/quiz-sets/columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type WorkspaceQuizSet } from '@tuturuuu/types/db';
@@ -36,8 +36,6 @@ export default async function WorkspaceQuizzesPage({
     href: `/${wsId}/education/quiz-sets/${quizSet.id}`,
   }));
 
-  const { data: _ } = await getData(wsId, await searchParams);
-
   return (
     <>
       <FeatureSummary
@@ -51,11 +49,9 @@ export default async function WorkspaceQuizzesPage({
       <Separator className="my-4" />
       <CustomDataTable
         data={quizSets}
-        count={count}
-        // data={mockQuizSets}
-        // count={mockQuizSets.length}
         columnGenerator={getQuizSetColumns}
         namespace="quiz-set-data-table"
+        count={count}
         extraData={{ wsId }}
         defaultVisibility={{
           id: false,
