@@ -5,7 +5,7 @@ import { LogoutDropdownItem } from '../(dashboard)/_components/logout-dropdown-i
 import { SystemLanguageWrapper } from '../(dashboard)/_components/system-language-wrapper';
 import { ThemeDropdownItems } from '../(dashboard)/_components/theme-dropdown-items';
 import UserSettingsDialog from './settings-dialog';
-import UserPresenceIndicator from './user-presence-indicator';
+import UserPresenceIndicator from '../../../components/user-presence-indicator';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Dialog } from '@tuturuuu/ui/dialog';
