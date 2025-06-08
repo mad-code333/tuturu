@@ -1,6 +1,35 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { updateUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
+import {
+  getUserDefaultWorkspace,
+  updateUserDefaultWorkspace,
+} from '@tuturuuu/utils/user-helper';
 import { NextRequest, NextResponse } from 'next/server';
+
+export async function GET() {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not authenticated' },
+        { status: 401 }
+      );
+    }
+
+    const defaultWorkspace = await getUserDefaultWorkspace();
+
+    return NextResponse.json(defaultWorkspace);
+  } catch (error) {
+    console.error('Error getting default workspace:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
 
 export async function PATCH(req: NextRequest) {
   try {
