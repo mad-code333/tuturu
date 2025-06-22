@@ -1,4 +1,4 @@
-import QuizForm from '../form';
+import QuizForm from '../multi-form';
 
 interface Props {
   params: Promise<{
