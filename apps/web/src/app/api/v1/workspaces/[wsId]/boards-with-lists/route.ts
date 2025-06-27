@@ -1,15 +1,19 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import { validate } from 'uuid';
+
+interface WorkspaceParams {
+  wsId: string;
+}
 
 export async function GET(
   _: NextRequest,
-  { params }: { params: Promise<{ wsId: string }> }
+  { params }: { params: Promise<WorkspaceParams> }
 ) {
   try {
     const { wsId } = await params;
 
-    // Validate workspace ID format
-    if (!wsId || wsId === 'undefined') {
+    if (!validate(wsId)) {
       return NextResponse.json(
         { error: 'Invalid workspace ID' },
         { status: 400 }
@@ -40,7 +44,7 @@ export async function GET(
 
     if (!memberCheck) {
       return NextResponse.json(
-        { error: 'You don\'t have access to this workspace' },
+        { error: "You don't have access to this workspace" },
         { status: 403 }
       );
     }
@@ -66,7 +70,13 @@ export async function GET(
       .eq('deleted', false)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch boards' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ boards: data });
   } catch (error) {
