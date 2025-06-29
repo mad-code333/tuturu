@@ -43,7 +43,7 @@ type SearchUserResult = {
 };
 
 // Create a compatible type that merges the search result with required User fields
-type PlatformUserWithDetails = Omit<User, 'services'> &
+export type PlatformUserWithDetails = Omit<User, 'services'> &
   Omit<PlatformUser, 'allow_workspace_creation'> &
   Partial<UserPrivateDetails> & {
     services?: User['services']; // Make services optional since RPC doesn't return it
@@ -219,7 +219,7 @@ export default async function PlatformRolesPage({
       <Separator className="my-4" />
       <CustomDataTable
         data={userData}
-        columnGenerator={getPlatformRoleColumns as any}
+        columnGenerator={getPlatformRoleColumns}
         count={userCount}
         extraData={{ locale }}
         namespace="platform-role-data-table"

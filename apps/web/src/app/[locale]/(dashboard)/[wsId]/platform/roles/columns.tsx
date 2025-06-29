@@ -41,13 +41,14 @@ import {
 import { generateFunName, getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 import { useRouter } from 'next/navigation';
+import type { PlatformUserWithDetails } from './page';
 
 export const getPlatformRoleColumns = (
   t: any,
   _: string | undefined,
   __: any[] | undefined,
   extraData: { locale: string }
-): ColumnDef<User & PlatformUser & Partial<UserPrivateDetails>>[] => {
+): ColumnDef<PlatformUserWithDetails>[] => {
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -115,9 +116,7 @@ export const getPlatformRoleColumns = (
     },
   });
 
-  const getUserPermissions = (
-    user: User & PlatformUser & Partial<UserPrivateDetails>
-  ) => {
+  const getUserPermissions = (user: PlatformUserWithDetails) => {
     const permissions = [];
 
     if (user.allow_role_management) {
