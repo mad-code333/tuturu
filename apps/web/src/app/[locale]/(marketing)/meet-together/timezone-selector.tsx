@@ -6,8 +6,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import timezones from '@tuturuuu/utils/timezones';
 import { useTranslations } from 'next-intl';
-import timezones from '../../../../data/timezones.json';
 
 interface Props {
   value: Timezone | undefined;
@@ -28,8 +28,8 @@ export default function TimezoneSelector({ value, onValueChange }: Props) {
         <SelectValue placeholder={t('select-time-zone')} />
       </SelectTrigger>
       <SelectContent>
-        {timezones.map((timezone: Timezone, index) => (
-          <SelectItem key={index} value={timezone.value}>
+        {timezones.map((timezone: Timezone) => (
+          <SelectItem key={timezone.value} value={timezone.value}>
             {timezone.text}
           </SelectItem>
         ))}
