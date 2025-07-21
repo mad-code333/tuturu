@@ -1,8 +1,8 @@
-import type { Mail } from './client';
+import type { InternalEmail } from '@tuturuuu/types/db';
 import { atom, useAtom } from 'jotai';
 
 type Config = {
-  selected: Mail['id'] | null;
+  selected: InternalEmail['id'] | null;
 };
 
 const configAtom = atom<Config>({
