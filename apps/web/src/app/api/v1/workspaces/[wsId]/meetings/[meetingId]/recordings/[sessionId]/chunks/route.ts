@@ -63,16 +63,28 @@ export async function POST(
       );
     }
 
+    // Validate audio blob
+    if (audioBlob.size === 0) {
+      return NextResponse.json(
+        { error: 'Audio blob is empty' },
+        { status: 400 }
+      );
+    }
+
+    console.log(
+      `Processing chunk ${chunkOrder}: ${audioBlob.size} bytes, type: ${audioBlob.type}, last: ${isLastChunk}`
+    );
+
     // Generate a unique filename for this chunk
     const timestamp = Date.now();
     const chunkId = `${sessionId}-chunk-${chunkOrder}-${timestamp}`;
     const storagePath = `${wsId}/recordings/${meetingId}/${sessionId}/${chunkId}.webm`;
 
     // Upload the audio chunk to storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('workspaces')
       .upload(storagePath, audioBlob, {
-        contentType: 'audio/webm',
+        contentType: audioBlob.type || 'audio/webm',
         cacheControl: '3600',
       });
 
