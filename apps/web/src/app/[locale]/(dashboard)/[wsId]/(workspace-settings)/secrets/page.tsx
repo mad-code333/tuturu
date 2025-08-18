@@ -1,6 +1,6 @@
 import { secretColumns } from './columns';
 import SecretForm from './form';
-import { CustomDataTable } from '@/components/custom-data-table';
+import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
