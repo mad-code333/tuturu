@@ -16,8 +16,8 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { AlertTriangle, Trash2 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface Props {
@@ -74,10 +74,11 @@ export default function Security({ workspace }: Props) {
             <div className="flex items-start gap-3">
               <AlertTriangle className="mt-0.5 h-5 w-5 text-dynamic-red" />
               <div className="flex-1">
-                <h3 className="font-semibold text-dynamic-red">Danger Zone</h3>
+                <h3 className="font-semibold text-dynamic-red">
+                  {t('danger_zone')}
+                </h3>
                 <p className="mt-1 text-foreground/70 text-sm">
-                  Once you delete a workspace, there is no going back. Please be
-                  certain.
+                  {t('delete_workspace_warning')}
                 </p>
               </div>
             </div>
