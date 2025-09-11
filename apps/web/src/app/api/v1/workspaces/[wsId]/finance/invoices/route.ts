@@ -30,7 +30,7 @@ interface CreateInvoiceRequest {
   frontend_total?: number;
 }
 
-interface CalculatedValues {
+export interface CalculatedValues {
   subtotal: number;
   discount_amount: number;
   total: number;
@@ -39,7 +39,7 @@ interface CalculatedValues {
 }
 
 // Backend calculation functions
-async function calculateInvoiceValues(
+export async function calculateInvoiceValues(
   supabase: any,
   wsId: string,
   products: InvoiceProduct[],
@@ -236,8 +236,8 @@ export async function POST(req: Request, { params }: Params) {
       customer_id,
       price: Math.round(total - rounding_applied), // Convert to integer (VND smallest unit)
       total_diff: Math.round(rounding_applied), // Store the rounding applied
-      note: content,
-      notice: notes,
+      note: notes,
+      notice: content,
       wallet_id,
       category_id,
       completed_at: new Date().toISOString(),
