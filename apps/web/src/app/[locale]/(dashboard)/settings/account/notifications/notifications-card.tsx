@@ -1,86 +1,52 @@
-import { Bell } from '@tuturuuu/icons';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
-import { Switch } from '@tuturuuu/ui/switch';
-import { getTranslations } from 'next-intl/server';
+'use client';
 
-interface NotificationOption {
-  key: string;
-  titleKey: string;
-  descriptionKey: string;
-}
+import NotificationPreferencesTable from '@/components/notifications/notification-preferences-table';
+import BrowserNotificationPermission from '@/components/notifications/browser-notification-permission';
+import AdvancedNotificationSettings from '@/components/notifications/advanced-notification-settings';
+import { useUpdateAccountNotificationPreferences } from '@/hooks/useAccountNotificationPreferences';
+import { useAccountNotificationPreferences } from '@/hooks/useAccountNotificationPreferences';
+import type { DigestFrequency } from '@/hooks/useAccountNotificationPreferences';
 
-export default async function NotificationsCard() {
-  const t = await getTranslations('settings-account');
+export default function NotificationsCard() {
+  const { data: preferences } = useAccountNotificationPreferences();
+  const updatePreferences = useUpdateAccountNotificationPreferences();
 
-  const notificationOptions: NotificationOption[] = [
-    {
-      key: 'email',
-      titleKey: 'email-notifications',
-      descriptionKey: 'email-notifications-description',
-    },
-    {
-      key: 'push',
-      titleKey: 'push-notifications',
-      descriptionKey: 'push-notifications-description',
-    },
-    {
-      key: 'marketing',
-      titleKey: 'marketing-communications',
-      descriptionKey: 'marketing-communications-description',
-    },
-    {
-      key: 'security',
-      titleKey: 'security-alerts',
-      descriptionKey: 'security-alerts-description',
-    },
-    {
-      key: 'workspace',
-      titleKey: 'workspace-activity',
-      descriptionKey: 'workspace-activity-description',
-    },
-  ];
+  // Extract advanced settings from preferences
+  const digestFrequency =
+    (preferences?.[0]?.digest_frequency as DigestFrequency) || 'immediate';
+  const quietHoursStart = preferences?.[0]?.quiet_hours_start || null;
+  const quietHoursEnd = preferences?.[0]?.quiet_hours_end || null;
+  const timezone = preferences?.[0]?.timezone || 'UTC';
+
+  const handleAdvancedUpdate = async (settings: {
+    digestFrequency?: DigestFrequency;
+    quietHoursStart?: string;
+    quietHoursEnd?: string;
+    timezone?: string;
+  }) => {
+    // Update all account preferences with the new advanced settings
+    await updatePreferences.mutateAsync({
+      preferences: [], // Empty array since we're only updating advanced settings
+      ...settings,
+    });
+  };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <div className="rounded-full bg-yellow-100 p-2 dark:bg-yellow-900/30">
-            <Bell className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-          </div>
-          <div>
-            <CardTitle>{t('notification-preferences')}</CardTitle>
-            <CardDescription>
-              {t('notification-preferences-description')}
-            </CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-4">
-          {notificationOptions.map((option) => (
-            <div
-              key={option.key}
-              className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
-            >
-              <div className="space-y-0.5">
-                <p className="font-medium text-sm">
-                  {t(option.titleKey as any)}
-                </p>
-                <p className="text-muted-foreground text-xs">
-                  {t(option.descriptionKey as any)}
-                </p>
-              </div>
-              <Switch disabled />
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      {/* Browser Permission */}
+      <BrowserNotificationPermission />
+
+      {/* Notification Preferences Table */}
+      <NotificationPreferencesTable scope="account" />
+
+      {/* Advanced Settings */}
+      <AdvancedNotificationSettings
+        digestFrequency={digestFrequency}
+        quietHoursStart={quietHoursStart}
+        quietHoursEnd={quietHoursEnd}
+        timezone={timezone}
+        onUpdate={handleAdvancedUpdate}
+      />
+    </div>
   );
 }

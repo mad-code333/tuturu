@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -11,22 +14,48 @@ const updateSchema = z.object({
   preferences: z.array(
     z.object({
       eventType: z.enum([
+        // Task assignment and general updates
         'task_assigned',
         'task_updated',
         'task_mention',
+        // Task field changes
+        'task_title_changed',
+        'task_description_changed',
+        'task_priority_changed',
+        'task_due_date_changed',
+        'task_start_date_changed',
+        'task_estimation_changed',
+        'task_moved',
+        // Task status changes
+        'task_completed',
+        'task_reopened',
+        // Task relationships
+        'task_label_added',
+        'task_label_removed',
+        'task_project_linked',
+        'task_project_unlinked',
+        'task_assignee_removed',
+        // Workspace
         'workspace_invite',
       ]),
-      channel: z.enum(['web', 'email', 'sms', 'push']),
+      channel: z.enum(['web', 'email', 'push']),
       enabled: z.boolean(),
     })
   ),
+  // Optional advanced settings
+  digestFrequency: z
+    .enum(['immediate', 'hourly', 'daily', 'weekly'])
+    .optional(),
+  quietHoursStart: z.string().nullable().optional(),
+  quietHoursEnd: z.string().nullable().optional(),
+  timezone: z.string().optional(),
 });
 
 /**
  * GET /api/v1/notifications/preferences
  * Gets notification preferences for the authenticated user in a workspace
  */
-export async function GET(req: Request) {
+export async function GET(request: Request) {
   try {
     const supabase = await createClient();
 
@@ -41,7 +70,7 @@ export async function GET(req: Request) {
     }
 
     // Parse and validate query parameters
-    const { searchParams } = new URL(req.url);
+    const searchParams = request.nextUrl.searchParams;
     const queryParams = querySchema.safeParse({
       wsId: searchParams.get('wsId'),
     });
@@ -55,15 +84,17 @@ export async function GET(req: Request) {
 
     const { wsId } = queryParams.data;
 
-    // Verify user has access to workspace
-    const { data: membership } = await supabase
+    // Verify user has access to workspace using admin client to bypass RLS
+    const supabaseAdmin = await createAdminClient();
+    const { data: membership, error: membershipError } = await supabaseAdmin
       .from('workspace_members')
-      .select('id')
+      .select('user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (!membership) {
+    if (membershipError || !membership) {
+      console.error('Membership check error:', membershipError);
       return NextResponse.json(
         { error: 'Access denied to workspace' },
         { status: 403 }
@@ -99,7 +130,7 @@ export async function GET(req: Request) {
  * PUT /api/v1/notifications/preferences
  * Updates notification preferences for the authenticated user
  */
-export async function PUT(req: Request) {
+export async function PUT(request: Request) {
   try {
     const supabase = await createClient();
 
@@ -114,7 +145,7 @@ export async function PUT(req: Request) {
     }
 
     // Parse and validate body
-    const body = await req.json();
+    const body = await request.json();
     const validatedData = updateSchema.safeParse(body);
 
     if (!validatedData.success) {
@@ -124,44 +155,122 @@ export async function PUT(req: Request) {
       );
     }
 
-    const { wsId, preferences } = validatedData.data;
+    const {
+      wsId,
+      preferences,
+      digestFrequency,
+      quietHoursStart,
+      quietHoursEnd,
+      timezone,
+    } = validatedData.data;
 
-    // Verify user has access to workspace
-    const { data: membership } = await supabase
+    // Verify user has access to workspace using admin client to bypass RLS
+    const supabaseAdmin = await createAdminClient();
+    const { data: membership, error: membershipError } = await supabaseAdmin
       .from('workspace_members')
-      .select('id')
+      .select('user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (!membership) {
+    if (membershipError || !membership) {
+      console.error('Membership check error:', membershipError);
       return NextResponse.json(
         { error: 'Access denied to workspace' },
         { status: 403 }
       );
     }
 
-    // Upsert preferences
-    const preferencesToUpsert = preferences.map((pref) => ({
-      ws_id: wsId,
-      user_id: user.id,
-      event_type: pref.eventType,
-      channel: pref.channel,
-      enabled: pref.enabled,
-    }));
+    // If preferences array is not empty, update individual preferences
+    if (preferences.length > 0) {
+      // Deduplicate preferences by (eventType, channel) to avoid duplicate inserts
+      const uniquePreferences = preferences.reduce((acc, pref) => {
+        const key = `${pref.eventType}-${pref.channel}`;
+        if (!acc.has(key)) {
+          acc.set(key, pref);
+        }
+        return acc;
+      }, new Map<string, (typeof preferences)[number]>());
 
-    const { error } = await supabase
-      .from('notification_preferences')
-      .upsert(preferencesToUpsert, {
-        onConflict: 'ws_id,user_id,event_type,channel',
-      });
+      const deduplicatedPreferences = Array.from(uniquePreferences.values());
 
-    if (error) {
-      console.error('Error updating preferences:', error);
-      return NextResponse.json(
-        { error: 'Failed to update preferences' },
-        { status: 500 }
-      );
+      // Delete existing preferences for the exact (event_type, channel) combinations
+      // we're about to insert to avoid duplicates
+      // Re-use the admin client created earlier for membership check
+      for (const pref of deduplicatedPreferences) {
+        const { error: deleteError } = await supabaseAdmin
+          .from('notification_preferences')
+          .delete()
+          .eq('ws_id', wsId)
+          .eq('user_id', user.id)
+          .eq('scope', 'workspace')
+          .eq('event_type', pref.eventType)
+          .eq('channel', pref.channel);
+
+        if (deleteError) {
+          console.error('Error deleting old preference:', deleteError);
+          return NextResponse.json(
+            { error: 'Failed to update preferences' },
+            { status: 500 }
+          );
+        }
+      }
+
+      // Insert new preferences
+      const preferencesToInsert = deduplicatedPreferences.map((pref) => ({
+        ws_id: wsId,
+        user_id: user.id,
+        event_type: pref.eventType,
+        channel: pref.channel,
+        enabled: pref.enabled,
+        scope: 'workspace' as const,
+        digest_frequency: digestFrequency || 'immediate',
+        quiet_hours_start: quietHoursStart || null,
+        quiet_hours_end: quietHoursEnd || null,
+        timezone: timezone || 'UTC',
+      }));
+
+      const { error: insertError } = await supabase
+        .from('notification_preferences')
+        .insert(preferencesToInsert);
+
+      if (insertError) {
+        console.error('Error inserting preferences:', insertError);
+        return NextResponse.json(
+          { error: 'Failed to update preferences' },
+          { status: 500 }
+        );
+      }
+    }
+
+    // If only advanced settings are being updated (empty preferences array),
+    // update all existing preferences for this workspace
+    if (
+      preferences.length === 0 &&
+      (digestFrequency || quietHoursStart || quietHoursEnd || timezone)
+    ) {
+      const updateData: Record<string, any> = {};
+      if (digestFrequency) updateData.digest_frequency = digestFrequency;
+      if (quietHoursStart !== undefined)
+        updateData.quiet_hours_start = quietHoursStart || null;
+      if (quietHoursEnd !== undefined)
+        updateData.quiet_hours_end = quietHoursEnd || null;
+      if (timezone) updateData.timezone = timezone;
+
+      const { error } = await supabase
+        .from('notification_preferences')
+        .update(updateData)
+        .eq('ws_id', wsId)
+        .eq('user_id', user.id)
+        .eq('scope', 'workspace');
+
+      if (error) {
+        console.error('Error updating advanced settings:', error);
+        return NextResponse.json(
+          { error: 'Failed to update advanced settings' },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({ success: true });
