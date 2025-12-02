@@ -7,7 +7,17 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 // This API route should be called by a cron job (pg_cron, Trigger.dev, or external cron service)
-// It processes pending notification batches and sends email digests
+// It processes BATCHED notification batches and sends email digests
+// Immediate notifications are handled by /api/notifications/send-immediate
+
+interface NotificationItem {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  data: Record<string, any>;
+  createdAt: string;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,11 +59,13 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Get all pending batches where window_end has passed
+    // Get all pending BATCHED notifications where window_end has passed
+    // Immediate notifications are handled separately by /api/notifications/send-immediate
     const { data: batches, error: batchesError } = await sbAdmin
       .from('notification_batches')
       .select('*')
       .eq('status', 'pending')
+      .eq('delivery_mode', 'batched')
       .lte('window_end', new Date().toISOString())
       .order('window_end', { ascending: true })
       .limit(50); // Process max 50 batches per run
@@ -68,7 +80,7 @@ export async function POST(req: NextRequest) {
 
     if (!batches || batches.length === 0) {
       return NextResponse.json({
-        message: 'No pending batches to process',
+        message: 'No pending batched notifications to process',
         processed: 0,
         failed: 0,
       });
@@ -76,7 +88,14 @@ export async function POST(req: NextRequest) {
 
     let processedCount = 0;
     let failedCount = 0;
-    const results = [];
+    const results: Array<{
+      batch_id: string;
+      status: string;
+      email?: string;
+      notification_count?: number;
+      reason?: string;
+      error?: string;
+    }> = [];
 
     // Process each batch
     for (const batch of batches) {
@@ -179,7 +198,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Format notifications for email template
-        const notifications = deliveryLogs
+        const notifications: NotificationItem[] = deliveryLogs
           .map((log: any) => log.notifications)
           .filter(Boolean)
           .map((n: any) => ({
@@ -191,7 +210,7 @@ export async function POST(req: NextRequest) {
             createdAt: n.created_at,
           }));
 
-        // Render email using React Email template
+        // Render digest email template
         const emailHtml = await render(
           NotificationDigestEmail({
             userName,
@@ -200,6 +219,8 @@ export async function POST(req: NextRequest) {
             workspaceUrl,
           })
         );
+
+        const emailSubject = `${notifications.length} new notification${notifications.length !== 1 ? 's' : ''} from ${workspaceName}`;
 
         // Send email via SES
         const sourceEmail =
@@ -211,7 +232,7 @@ export async function POST(req: NextRequest) {
           },
           Message: {
             Subject: {
-              Data: `${notifications.length} new notification${notifications.length !== 1 ? 's' : ''} from ${workspaceName}`,
+              Data: emailSubject,
             },
             Body: {
               Html: { Data: emailHtml },
@@ -324,6 +345,6 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     status: 'ok',
-    message: 'Notification batch processor endpoint',
+    message: 'Notification batch processor endpoint (batched notifications only)',
   });
 }
