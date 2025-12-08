@@ -119,7 +119,6 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json({
-      ok: true,
       message: 'Product sync completed',
       processed: processedCount,
       failed: failedCount,
@@ -129,7 +128,6 @@ export async function GET(req: NextRequest) {
     console.error('Cron job error:', error);
     return NextResponse.json(
       {
-        ok: false,
         error: 'Internal server error',
         details: error instanceof Error ? error.message : 'Unknown error',
       },
