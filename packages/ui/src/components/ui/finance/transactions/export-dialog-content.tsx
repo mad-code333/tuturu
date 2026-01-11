@@ -37,6 +37,10 @@ export default function ExportDialogContent({
     page?: string;
     pageSize?: string;
     userIds?: string | string[];
+    categoryIds?: string | string[];
+    walletIds?: string | string[];
+    start?: string;
+    end?: string;
   };
 }) {
   const t = useTranslations();
@@ -88,7 +92,7 @@ export default function ExportDialogContent({
 
     const allData: Transaction[] = [];
     let currentPage = 1;
-    const pageSize = 100;
+    const pageSize = 1000;
 
     while (true) {
       const { data, count } = await getData(wsId, {
@@ -96,6 +100,10 @@ export default function ExportDialogContent({
         page: currentPage.toString(),
         pageSize: pageSize.toString(),
         userIds: searchParams.userIds,
+        categoryIds: searchParams.categoryIds,
+        walletIds: searchParams.walletIds,
+        start: searchParams.start,
+        end: searchParams.end,
       });
 
       allData.push(...data);
@@ -209,16 +217,24 @@ async function getData(
     page = '1',
     pageSize = '10',
     userIds,
+    categoryIds,
+    walletIds,
+    start,
+    end,
   }: {
     q?: string;
     page?: string;
     pageSize?: string;
     userIds?: string | string[];
+    categoryIds?: string | string[];
+    walletIds?: string | string[];
+    start?: string;
+    end?: string;
   }
 ) {
   const supabase = createClient();
 
-  const queryBuilder = supabase
+  let queryBuilder = supabase
     .from('wallet_transactions')
     .select(
       '*, workspace_wallets!inner(name, ws_id), transaction_categories(name)',
@@ -230,22 +246,45 @@ async function getData(
     .order('taken_at', { ascending: false })
     .order('created_at', { ascending: false });
 
-  if (q) queryBuilder.ilike('description', `%${q}%`);
+  if (q) queryBuilder = queryBuilder.ilike('description', `%${q}%`);
 
   // Filter by user IDs if provided
   if (userIds) {
     const userIdArray = Array.isArray(userIds) ? userIds : [userIds];
     if (userIdArray.length > 0) {
-      queryBuilder.in('creator_id', userIdArray);
+      queryBuilder = queryBuilder.in('creator_id', userIdArray);
     }
+  }
+
+  // Filter by category IDs if provided
+  if (categoryIds) {
+    const categoryIdArray = Array.isArray(categoryIds)
+      ? categoryIds
+      : [categoryIds];
+    if (categoryIdArray.length > 0) {
+      queryBuilder = queryBuilder.in('category_id', categoryIdArray);
+    }
+  }
+
+  // Filter by wallet IDs if provided
+  if (walletIds) {
+    const walletIdArray = Array.isArray(walletIds) ? walletIds : [walletIds];
+    if (walletIdArray.length > 0) {
+      queryBuilder = queryBuilder.in('wallet_id', walletIdArray);
+    }
+  }
+
+  // Filter by date range if provided
+  if (start && end) {
+    queryBuilder = queryBuilder.gte('taken_at', start).lte('taken_at', end);
   }
 
   if (page && pageSize) {
     const parsedPage = parseInt(page, 10);
     const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize - 1;
-    queryBuilder.range(start, end);
+    const startOffset = (parsedPage - 1) * parsedSize;
+    const endOffset = parsedPage * parsedSize - 1;
+    queryBuilder = queryBuilder.range(startOffset, endOffset);
   }
 
   const { data: rawData, error, count } = await queryBuilder;
