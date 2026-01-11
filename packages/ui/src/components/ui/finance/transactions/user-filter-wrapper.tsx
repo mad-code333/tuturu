@@ -46,6 +46,7 @@ export function UserFilterWrapper({ wsId }: UserFilterWrapperProps) {
       wsId={wsId}
       selectedUserIds={currentUserIds}
       onUsersChange={handleUsersChange}
+      filterType="transaction_creators"
     />
   );
 }
