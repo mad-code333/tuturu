@@ -1,6 +1,5 @@
 'use client';
 
-import type { Row } from '@tanstack/react-table';
 import {
   Archive,
   Edit,
@@ -35,20 +34,21 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { TaskBoardForm } from './form';
 
-interface ProjectRowActionsProps {
-  row: Row<WorkspaceTaskBoard>;
+interface BoardActionsProps {
+  board: WorkspaceTaskBoard;
+  wsId?: string;
 }
 
-export function ProjectRowActions({ row }: ProjectRowActionsProps) {
+export function BoardActions({ board, wsId }: BoardActionsProps) {
   const t = useTranslations();
-  const data = row.original;
+  const data = board;
   const {
     softDeleteBoard,
     permanentDeleteBoard,
     restoreBoard,
     archiveBoard,
     unarchiveBoard,
-  } = useBoardActions(data.ws_id);
+  } = useBoardActions(wsId || data.ws_id);
 
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -340,3 +340,6 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
     </>
   );
 }
+
+export { BoardActions as BoardCardActions };
+export { BoardActions as ProjectRowActions };
