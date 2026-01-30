@@ -1,12 +1,15 @@
+import { Store } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import TemplatesClient from './client';
-import type { BoardTemplate, TemplateFilter } from './types';
+import type { BoardTemplate } from './types';
 
 export const metadata: Metadata = {
   title: 'Board Templates',
@@ -22,7 +25,7 @@ interface Props {
   }>;
 }
 
-export default async function TemplatesPage({ params, searchParams }: Props) {
+export default async function TemplatesPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
@@ -33,13 +36,8 @@ export default async function TemplatesPage({ params, searchParams }: Props) {
 
         if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 
-        // Get search params
-        const resolvedSearchParams = await searchParams;
-        const visibility = (resolvedSearchParams.visibility ||
-          'workspace') as TemplateFilter;
-
-        // Fetch templates based on visibility
-        const { templates } = await getTemplates(wsId, visibility);
+        // Fetch templates
+        const { templates } = await getTemplates(wsId);
 
         const t = await getTranslations('ws-board-templates');
 
@@ -53,14 +51,18 @@ export default async function TemplatesPage({ params, searchParams }: Props) {
                 </h1>
               }
               description={t('gallery.description')}
+              action={
+                <Link href={`/${wsId}/tasks/templates/marketplace`}>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Store className="h-4 w-4" />
+                    {t('gallery.marketplace')}
+                  </Button>
+                </Link>
+              }
             />
 
             {/* Templates Gallery */}
-            <TemplatesClient
-              wsId={wsId}
-              initialTemplates={templates}
-              initialVisibility={visibility}
-            />
+            <TemplatesClient wsId={wsId} initialTemplates={templates} />
           </div>
         );
       }}
@@ -69,8 +71,7 @@ export default async function TemplatesPage({ params, searchParams }: Props) {
 }
 
 async function getTemplates(
-  wsId: string,
-  visibility: TemplateFilter
+  wsId: string
 ): Promise<{ templates: BoardTemplate[] }> {
   const supabase = await createClient();
 
@@ -83,7 +84,7 @@ async function getTemplates(
     return { templates: [] };
   }
 
-  let query = supabase
+  const { data: templates, error } = await supabase
     .from('board_templates')
     .select(
       `
@@ -99,20 +100,9 @@ async function getTemplates(
       updated_at
     `
     )
+    .eq('ws_id', wsId)
+    .or(`visibility.neq.private,created_by.eq.${user.id}`)
     .order('created_at', { ascending: false });
-
-  // Apply visibility-based filtering
-  if (visibility === 'private') {
-    query = query.eq('created_by', user.id);
-  }
-  if (visibility === 'workspace') {
-    query = query.eq('ws_id', wsId);
-  }
-  if (visibility === 'public') {
-    query = query.eq('visibility', 'public');
-  }
-
-  const { data: templates, error } = await query;
 
   if (error) {
     console.error('Error fetching templates:', error);
