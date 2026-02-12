@@ -1,5 +1,7 @@
 'use client';
 
+import { formatDuration } from '@tuturuuu/hooks/utils/time-format';
+import type { PeriodStats } from '@tuturuuu/hooks/utils/time-tracker-utils';
 import type { TimeTrackingCategory } from '@tuturuuu/types';
 import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
@@ -14,8 +16,6 @@ import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef } from 'react';
-import { formatDuration } from '@/lib/time-format';
-import type { PeriodStats } from '@/lib/time-tracker-utils';
 import type { SessionWithRelations } from '../../types';
 import { WeekCalendarLegend } from './week-calendar-legend';
 import {

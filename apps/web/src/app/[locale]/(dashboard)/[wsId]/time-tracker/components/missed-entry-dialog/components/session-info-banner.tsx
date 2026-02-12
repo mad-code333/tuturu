@@ -1,8 +1,8 @@
+import { formatDuration } from '@tuturuuu/hooks/utils/time-format';
 import { Clock } from '@tuturuuu/icons';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
-import { formatDuration } from '@/lib/time-format';
 import type { SessionWithRelations } from '../../../types';
 
 interface SessionInfoBannerProps {

@@ -1,9 +1,9 @@
 'use client';
 
+import { formatDuration } from '@tuturuuu/hooks/utils/time-format';
 import { Coffee } from '@tuturuuu/icons';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
-import { formatDuration } from '@/lib/time-format';
 import type { ChainBreak, ChainSession, ChainSummary } from '../types';
 
 interface ChainSummaryBannerProps {

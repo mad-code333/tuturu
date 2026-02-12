@@ -2,6 +2,8 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useWorkspaceTimeThreshold } from '@tuturuuu/hooks';
+import { useSessionExceedsThreshold } from '@tuturuuu/hooks/hooks/use-session-exceeds-threshold';
+import { useWorkspaceBreakTypes } from '@tuturuuu/hooks/hooks/use-workspace-break-types';
 import * as Icons from '@tuturuuu/icons';
 import {
   Apple,
@@ -66,8 +68,6 @@ import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { ComponentProps, ElementType } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSessionExceedsThreshold } from '@/hooks/useSessionExceedsThreshold';
-import { useWorkspaceBreakTypes } from '@/hooks/useWorkspaceBreakTypes';
 import type {
   ExtendedWorkspaceTask,
   SessionWithRelations,

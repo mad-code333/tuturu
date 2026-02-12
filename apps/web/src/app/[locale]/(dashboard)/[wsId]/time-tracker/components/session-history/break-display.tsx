@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import type { WorkspaceBreakType } from '@tuturuuu/hooks/hooks/use-workspace-break-types';
 import * as Icons from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import dayjs from 'dayjs';
@@ -10,7 +11,6 @@ import {
   getBreakTypeColor,
   getIconComponent,
 } from '@/hooks/useBreakTypeStyles';
-import type { WorkspaceBreakType } from '@/hooks/useWorkspaceBreakTypes';
 
 interface BreakDisplayProps {
   sessionId: string;

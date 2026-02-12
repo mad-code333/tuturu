@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDuration } from '@tuturuuu/hooks/utils/time-format';
 import {
   CheckCircle,
   ChevronDown,
@@ -33,7 +34,6 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
-import { formatDuration } from '@/lib/time-format';
 import type { SessionWithRelations } from '../../types';
 import {
   BreakDisplay,

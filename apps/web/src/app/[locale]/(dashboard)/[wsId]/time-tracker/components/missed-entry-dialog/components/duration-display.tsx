@@ -1,7 +1,7 @@
+import { formatDuration } from '@tuturuuu/hooks/utils/time-format';
 import { Clock } from '@tuturuuu/icons';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
-import { formatDuration } from '@/lib/time-format';
 
 interface DurationDisplayProps {
   startTime: string;

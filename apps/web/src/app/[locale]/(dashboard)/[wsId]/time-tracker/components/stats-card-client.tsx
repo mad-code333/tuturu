@@ -1,6 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { formatDuration } from '@tuturuuu/hooks/utils/time-format';
+import { getCategoryColor } from '@tuturuuu/hooks/utils/time-tracker-category-colors';
 import {
   Calendar,
   Clock,
@@ -26,8 +28,6 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
-import { getCategoryColor } from '@/components/settings/time-tracker/time-tracker-utils';
-import { formatDuration } from '@/lib/time-format';
 import type { DailyActivity } from '@/lib/time-tracking-helper';
 import type { TimeTrackingGoal } from '../types';
 

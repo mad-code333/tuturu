@@ -2,6 +2,8 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useWorkspaceTimeThreshold } from '@tuturuuu/hooks';
+import { useSessionExceedsThreshold } from '@tuturuuu/hooks/hooks/use-session-exceeds-threshold';
+import { formatDuration, formatTime } from '@tuturuuu/hooks/utils/time-format';
 import * as Icons from '@tuturuuu/icons';
 import {
   CheckCircle,
@@ -31,8 +33,6 @@ import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
-import { useSessionExceedsThreshold } from '@/hooks/useSessionExceedsThreshold';
-import { formatDuration, formatTime } from '@/lib/time-format';
 import type { SessionWithRelations } from '../types';
 import MissedEntryDialog from './missed-entry-dialog';
 

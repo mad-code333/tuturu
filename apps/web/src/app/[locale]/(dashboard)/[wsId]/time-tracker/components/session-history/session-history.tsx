@@ -4,6 +4,8 @@ import {
   useSessionHistoryQuery,
   useWorkspaceTimeThreshold,
 } from '@tuturuuu/hooks';
+import { formatDuration } from '@tuturuuu/hooks/utils/time-format';
+import type { PeriodStats } from '@tuturuuu/hooks/utils/time-tracker-utils';
 import {
   ChevronDown,
   Clock,
@@ -35,8 +37,6 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { formatDuration } from '@/lib/time-format';
-import type { PeriodStats } from '@/lib/time-tracker-utils';
 import type { SessionWithRelations } from '../../types';
 import MissedEntryDialog from '../missed-entry-dialog';
 import { WorkspaceSelectDialog } from '../workspace-select-dialog';

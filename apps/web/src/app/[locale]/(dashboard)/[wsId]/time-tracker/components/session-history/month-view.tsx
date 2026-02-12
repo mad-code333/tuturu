@@ -1,5 +1,7 @@
 'use client';
 
+import { formatDuration } from '@tuturuuu/hooks/utils/time-format';
+import type { PeriodStats } from '@tuturuuu/hooks/utils/time-tracker-utils';
 import {
   BarChart2,
   Brain,
@@ -17,8 +19,6 @@ import { cn } from '@tuturuuu/utils/format';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
-import { formatDuration } from '@/lib/time-format';
-import type { PeriodStats } from '@/lib/time-tracker-utils';
 import type { SessionWithRelations } from '../../types';
 import type { StackedSession } from './session-types';
 

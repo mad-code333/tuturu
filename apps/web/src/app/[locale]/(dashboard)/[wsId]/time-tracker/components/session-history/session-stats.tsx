@@ -1,11 +1,11 @@
 'use client';
 
+import { formatDuration } from '@tuturuuu/hooks/utils/time-format';
+import type { PeriodStats } from '@tuturuuu/hooks/utils/time-tracker-utils';
 import { BarChart2, Loader2 } from '@tuturuuu/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import { useTranslations } from 'next-intl';
-import { formatDuration } from '@/lib/time-format';
-import type { PeriodStats } from '@/lib/time-tracker-utils';
 
 interface SessionStatsProps {
   periodStats?: PeriodStats;

@@ -1,7 +1,7 @@
 // Session History - Modular Components
 
 // Re-export formatDuration for backward compatibility
-export { formatDuration } from '@/lib/time-format';
+export { formatDuration } from '@tuturuuu/hooks/utils/time-format';
 export { EditSessionDialog } from './edit-session-dialog';
 export { MonthView } from './month-view';
 export { PendingRequestsBanner } from './pending-requests-banner';

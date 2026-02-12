@@ -12,12 +12,12 @@ export {
   getSessionDurationInPeriod,
   getTimeOfDayCategory,
   type PeriodStats,
-} from '@/lib/time-tracker-utils';
+} from '@tuturuuu/hooks/utils/time-tracker-utils';
 
 import {
   getSessionDurationForDay,
   getSessionDurationInPeriod,
-} from '@/lib/time-tracker-utils';
+} from '@tuturuuu/hooks/utils/time-tracker-utils';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);

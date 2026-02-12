@@ -1,4 +1,5 @@
 import { useWorkspaceTimeThreshold } from '@tuturuuu/hooks';
+import { useWorkspaceCategories } from '@tuturuuu/hooks/hooks/use-workspace-categories';
 import { AlertCircle, AlertTriangle } from '@tuturuuu/icons';
 import {
   Dialog,
@@ -10,7 +11,6 @@ import {
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
-import { useWorkspaceCategories } from '@/hooks/use-workspace-categories';
 import { ImageUploadSection } from '../../requests/components/image-upload-section';
 import { useUserWorkspaces } from '../use-user-workspaces';
 import { useWorkspaceTasks } from '../use-workspace-tasks';

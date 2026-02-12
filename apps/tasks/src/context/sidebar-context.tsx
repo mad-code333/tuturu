@@ -6,4 +6,4 @@ export {
   SidebarContext,
   SidebarProvider,
   useSidebar,
-} from '@tuturuuu/ui/custom/sidebar-context';
+} from '@tuturuuu/satellite/sidebar-context';
