@@ -562,7 +562,7 @@ export async function POST(req: Request, { params }: Params) {
 
     // Get product name  from workspace_products
     const productValues = Array.from(productMap.values());
-    const { data: productsData, error: productsError } = await supabase
+    const { data: productsData, error: productsError } = await sbAdmin
       .from('workspace_products')
       .select('name, id')
       .in(
@@ -585,7 +585,7 @@ export async function POST(req: Request, { params }: Params) {
     const unitIds = productValues.map((product) => product.unit_id);
 
     // Get unit from inventory_units
-    const { data: unitsData, error: unitsError } = await supabase
+    const { data: unitsData, error: unitsError } = await sbAdmin
       .from('inventory_units')
       .select('name, id')
       .in('id', unitIds)
@@ -615,7 +615,7 @@ export async function POST(req: Request, { params }: Params) {
       price: Math.round(product.price), // Convert to integer
     }));
 
-    const { error: invoiceProductsError } = await supabase
+    const { error: invoiceProductsError } = await sbAdmin
       .from('finance_invoice_products')
       .insert(invoiceProducts);
 
@@ -623,7 +623,7 @@ export async function POST(req: Request, { params }: Params) {
       console.error('Error creating invoice products:', invoiceProductsError);
       // Rollback: delete the created invoice and transaction
       await Promise.all([
-        supabase.from('finance_invoices').delete().eq('id', invoiceId),
+        sbAdmin.from('finance_invoices').delete().eq('id', invoiceId),
       ]);
       return NextResponse.json(
         {
@@ -642,7 +642,7 @@ export async function POST(req: Request, { params }: Params) {
       allowPromotions &&
       promotion
     ) {
-      const { error: promotionError } = await supabase
+      const { error: promotionError } = await sbAdmin
         .from('finance_invoice_promotions')
         .insert({
           invoice_id: invoiceId,
@@ -661,11 +661,11 @@ export async function POST(req: Request, { params }: Params) {
 
         // Rollback: delete all created records
         await Promise.all([
-          supabase
+          sbAdmin
             .from('finance_invoice_products')
             .delete()
             .eq('invoice_id', invoiceId),
-          supabase.from('finance_invoices').delete().eq('id', invoiceId),
+          sbAdmin.from('finance_invoices').delete().eq('id', invoiceId),
         ]);
 
         if (isLimitReached) {
@@ -696,7 +696,7 @@ export async function POST(req: Request, { params }: Params) {
       beneficiary_id: customer_id,
     }));
 
-    const { error: stockError } = await supabase
+    const { error: stockError } = await sbAdmin
       .from('product_stock_changes')
       .insert(stockChanges);
 
@@ -704,15 +704,15 @@ export async function POST(req: Request, { params }: Params) {
       console.error('Error creating stock changes:', stockError);
       // Rollback: delete all created records
       await Promise.all([
-        supabase
+        sbAdmin
           .from('finance_invoice_promotions')
           .delete()
           .eq('invoice_id', invoiceId),
-        supabase
+        sbAdmin
           .from('finance_invoice_products')
           .delete()
           .eq('invoice_id', invoiceId),
-        supabase.from('finance_invoices').delete().eq('id', invoiceId),
+        sbAdmin.from('finance_invoices').delete().eq('id', invoiceId),
       ]);
       return NextResponse.json(
         {
