@@ -6,7 +6,7 @@ import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { toast } from '@tuturuuu/ui/sonner';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface Props {
   wsId: string;
@@ -23,6 +23,10 @@ export function ModuleContentEditor({
 }: Props) {
   const [post, setPost] = useState<JSONContent | null>(content || null);
   const t = useTranslations();
+
+  useEffect(() => {
+    setPost(content || null);
+  }, [content, moduleId]);
 
   const saveMutation = useMutation({
     mutationFn: async (nextContent: JSONContent | null) =>

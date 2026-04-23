@@ -3,7 +3,7 @@
 import { updateWorkspaceCourseModule } from '@tuturuuu/internal-api/education';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export function ModuleToggles({
   wsId,
@@ -23,6 +23,11 @@ export function ModuleToggles({
   const [loading, setLoading] = useState(false);
   //   const [isPublic, setIsPublic] = useState(initialIsPublic);
   const [isPublished, setIsPublished] = useState(initialIsPublished);
+
+  useEffect(() => {
+    setIsPublished(initialIsPublished);
+    setLoading(false);
+  }, [initialIsPublished, moduleId]);
 
   //   const handlePublicChange = async (checked: boolean) => {
   //     setLoading(true);
