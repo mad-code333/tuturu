@@ -1,8 +1,16 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { revokeUserAiTempAuthTokens } from '@tuturuuu/utils/ai-temp-auth';
 import { NextResponse } from 'next/server';
 
 export async function POST() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    await revokeUserAiTempAuthTokens(user.id);
+  }
 
   const { error } = await supabase.auth.signOut({
     scope: 'local',
