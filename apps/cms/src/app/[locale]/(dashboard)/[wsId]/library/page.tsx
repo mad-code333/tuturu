@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { buildCmsStrings } from '@/features/cms-studio/cms-strings';
 import { CmsStudioClient } from '@/features/cms-studio/cms-studio-client';
+import { getCmsGamesEnabled } from '@/lib/cms-games';
 import { getCmsWorkspaceAccess } from '@/lib/external-projects/access';
 
 interface Props {
@@ -24,12 +25,16 @@ export default async function CmsLibraryPage({ params, searchParams }: Props) {
     redirect('/no-access');
   }
 
+  const cmsGamesEnabled = await getCmsGamesEnabled(
+    access.normalizedWorkspaceId
+  );
   const t = await getTranslations('external-projects');
 
   return (
     <CmsStudioClient
       availableEditSections={['entries', 'workflow']}
       binding={access.binding}
+      cmsGamesEnabled={cmsGamesEnabled}
       headerDescription="Manage collections, entries, and editorial workflow from the CMS library."
       initialEditSection="entries"
       initialEditorEntryId={
