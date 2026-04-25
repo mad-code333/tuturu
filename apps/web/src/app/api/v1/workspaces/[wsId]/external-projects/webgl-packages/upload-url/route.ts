@@ -75,6 +75,7 @@ export async function POST(
       entry,
     });
     const uploadFilename = `${generateRandomUUID()}-${filename}`;
+    const archivePath = posix.join(uploadPath, uploadFilename);
     const upload = await createWorkspaceStorageUploadPayload(
       access.normalizedWorkspaceId,
       uploadFilename,
@@ -88,7 +89,14 @@ export async function POST(
 
     return NextResponse.json({
       ...upload,
-      archivePath: posix.join(uploadPath, uploadFilename),
+      archivePath,
+      proxyUploadUrl: `/api/v1/workspaces/${encodeURIComponent(wsId)}/external-projects/webgl-packages/upload?${new URLSearchParams(
+        {
+          archivePath,
+          entryId: payload.entryId,
+          filename,
+        }
+      ).toString()}`,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
