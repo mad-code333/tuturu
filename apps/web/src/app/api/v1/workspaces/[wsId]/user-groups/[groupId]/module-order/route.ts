@@ -22,6 +22,8 @@ interface RouteParams {
 }
 
 export const PATCH = withSessionAuth(
+  // Deprecated compatibility endpoint. Prefer
+  // /user-groups/:groupId/module-groups/:moduleGroupId/module-order.
   async (request, context, params: RouteParams | Promise<RouteParams>) => {
     const parsedParams = RouteParamsSchema.safeParse(await params);
     if (!parsedParams.success) {
@@ -141,6 +143,11 @@ export const PATCH = withSessionAuth(
     );
 
     if (reorderError) {
+      console.error('Failed to reorder modules', {
+        error: reorderError,
+        groupId,
+        moduleIds,
+      });
       return NextResponse.json(
         { message: 'Failed to persist module order' },
         { status: 500 }

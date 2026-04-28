@@ -27,6 +27,7 @@ const CreateModuleSchema = z
     extra_content: z.custom<Json>().optional(),
     is_public: z.boolean().optional(),
     is_published: z.boolean().optional(),
+    module_group_id: z.guid(),
     name: z.string().trim().min(1).max(255),
     youtube_links: z.array(z.string().trim()).nullable().optional(),
   })
@@ -120,6 +121,7 @@ export const GET = withSessionAuth(
       .from('workspace_course_modules')
       .select('*')
       .eq('group_id', groupId)
+      .order('module_group_id', { ascending: true })
       .order('sort_key', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: true });
 
@@ -166,13 +168,53 @@ export const POST = withSessionAuth(
     );
     if (access instanceof NextResponse) return access;
 
+    const { data: moduleGroup, error: moduleGroupError } = await access.sbAdmin
+      .from('workspace_course_module_groups')
+      .select('id')
+      .eq('id', parsed.data.module_group_id)
+      .eq('group_id', groupId)
+      .maybeSingle();
+
+    if (moduleGroupError) {
+      return NextResponse.json(
+        { message: 'Failed to validate module group' },
+        { status: 500 }
+      );
+    }
+
+    if (!moduleGroup) {
+      return NextResponse.json(
+        { message: 'Module group not found' },
+        { status: 404 }
+      );
+    }
+
+    const { data: lastModuleInGroup, error: lastModuleInGroupError } =
+      await access.sbAdmin
+        .from('workspace_course_modules')
+        .select('sort_key')
+        .eq('group_id', groupId)
+        .eq('module_group_id', parsed.data.module_group_id)
+        .order('sort_key', { ascending: false, nullsFirst: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (lastModuleInGroupError) {
+      return NextResponse.json(
+        { message: 'Failed to determine module sort order' },
+        { status: 500 }
+      );
+    }
+
     const insertPayload: WorkspaceCourseModuleInsert = {
       content: parsed.data.content ?? null,
       extra_content: parsed.data.extra_content ?? null,
       group_id: groupId,
       is_public: parsed.data.is_public ?? false,
       is_published: parsed.data.is_published ?? false,
+      module_group_id: parsed.data.module_group_id,
       name: parsed.data.name,
+      sort_key: (lastModuleInGroup?.sort_key ?? 0) + 1,
       youtube_links: parsed.data.youtube_links ?? null,
     };
 
