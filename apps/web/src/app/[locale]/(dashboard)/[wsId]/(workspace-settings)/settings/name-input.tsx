@@ -7,16 +7,16 @@ import {
   FormControl,
   FormField,
   FormItem,
+  FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as z from 'zod';
 
 interface Props {
@@ -46,9 +46,12 @@ export default function NameInput({
     },
   });
 
+  const prevDefault = useRef(defaultValue);
   useEffect(() => {
-    form.reset({ name: defaultValue || '' });
-  }, [defaultValue, form]);
+    if (Object.is(prevDefault.current, defaultValue)) return;
+    prevDefault.current = defaultValue;
+    form.reset({ name: defaultValue ?? '' });
+  }, [defaultValue]);
 
   const { isDirty } = form.formState;
 
@@ -81,38 +84,37 @@ export default function NameInput({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-        <div className="flex items-end gap-2">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem className="w-full">
-                <Label htmlFor="workspace-name">{t('name')}</Label>
-                <FormControl>
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('name')}</FormLabel>
+              <div className="flex min-w-0 items-center gap-2">
+                <FormControl className="min-w-0 flex-1">
                   <Input
-                    id="workspace-name"
                     placeholder={t('name_placeholder')}
                     disabled={disabled}
                     {...field}
                   />
                 </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <Button
-            type="submit"
-            size="icon"
-            disabled={!isDirty || saving || disabled}
-          >
-            {saving ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Check className="h-5 w-5" />
-            )}
-          </Button>
-        </div>
+                <Button
+                  type="submit"
+                  size="icon"
+                  className="shrink-0"
+                  disabled={!isDirty || saving || disabled}
+                >
+                  {saving ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Check className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </form>
     </Form>
   );
