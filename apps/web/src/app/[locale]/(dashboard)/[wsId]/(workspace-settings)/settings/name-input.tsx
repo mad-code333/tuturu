@@ -1,22 +1,24 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
 import { Check, Loader2 } from '@tuturuuu/icons';
+import { updateWorkspace } from '@tuturuuu/internal-api/workspaces';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
+  FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import * as z from 'zod';
 
 interface Props {
@@ -37,7 +39,12 @@ export default function NameInput({
   const t = useTranslations('ws-settings');
   const router = useRouter();
 
-  const [saving, setSaving] = useState(false);
+  const updateWorkspaceMutation = useMutation({
+    mutationFn: async ({ name }: { name: string }) =>
+      updateWorkspace(wsId, {
+        name,
+      }),
+  });
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -46,73 +53,66 @@ export default function NameInput({
     },
   });
 
+  const prevDefault = useRef(defaultValue);
   useEffect(() => {
-    form.reset({ name: defaultValue || '' });
-  }, [defaultValue, form]);
+    if (Object.is(prevDefault.current, defaultValue)) return;
+    prevDefault.current = defaultValue;
+    form.reset({ name: defaultValue ?? '' });
+  }, [defaultValue, form.reset]);
 
   const { isDirty } = form.formState;
+  const saving = updateWorkspaceMutation.isPending;
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
-    setSaving(true);
-
-    const res = await fetch(`/api/workspaces/${wsId}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-
-    if (res.ok) {
-      toast({
-        title: 'Workspace updated',
-        description: 'The name of the workspace has been updated.',
+    try {
+      await updateWorkspaceMutation.mutateAsync({ name: data.name ?? '' });
+      toast.success(t('name_updated'), {
+        description: t('name_updated_description'),
       });
 
       router.refresh();
       form.reset({ name: data.name });
-    } else {
-      toast({
-        title: 'An error occurred',
-        description: 'Please try again.',
+    } catch {
+      toast.error(t('name_update_error'), {
+        description: t('name_update_error_description'),
       });
     }
-
-    setSaving(false);
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-        <div className="flex items-end gap-2">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem className="w-full">
-                <Label htmlFor="workspace-name">{t('name')}</Label>
-                <FormControl>
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('name')}</FormLabel>
+              <div className="flex min-w-0 items-center gap-2">
+                <FormControl className="min-w-0 flex-1">
                   <Input
-                    id="workspace-name"
                     placeholder={t('name_placeholder')}
                     disabled={disabled}
                     {...field}
                   />
                 </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <Button
-            type="submit"
-            size="icon"
-            disabled={!isDirty || saving || disabled}
-          >
-            {saving ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Check className="h-5 w-5" />
-            )}
-          </Button>
-        </div>
+                <Button
+                  type="submit"
+                  size="icon"
+                  className="shrink-0"
+                  disabled={!isDirty || saving || disabled}
+                >
+                  {saving ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Check className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </form>
     </Form>
   );
