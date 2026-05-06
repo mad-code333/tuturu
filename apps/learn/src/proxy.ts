@@ -78,7 +78,7 @@ function getCanonicalPublicRedirect(request: NextRequest) {
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (request.nextUrl.pathname.startsWith('/api')) {
     const guardResponse = await guardApiProxyRequest(request, {
-      prefixBase: 'proxy:tulearn:api',
+      prefixBase: 'proxy:learn:api',
     });
     return guardResponse ?? NextResponse.next();
   }
