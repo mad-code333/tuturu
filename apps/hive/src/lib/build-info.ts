@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { inflateSync } from 'node:zlib';
-import type { HiveBuildInfo } from '@/engine/types';
+import type { HiveBuildInfo } from '@tuturuuu/hive-ui/studio';
 import packageJson from '../../package.json';
 
 let cachedBuildInfo: HiveBuildInfo | null = null;
