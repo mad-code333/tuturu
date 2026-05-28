@@ -1,13 +1,19 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { getInventoryActorContext } from '@/lib/inventory/actor';
 import {
-  inventoryNotFoundResponse,
-  isInventoryEnabled,
-} from '@/lib/inventory/access';
+  createInventoryAuditLog,
+  diffInventoryAuditFields,
+} from '@/lib/inventory/audit';
+import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
+import { canManageInventorySetup } from '@/lib/inventory/permissions';
+
+const UnitUpdateSchema = z.object({
+  name: z.string().trim().min(1).max(MAX_NAME_LENGTH).optional(),
+});
 
 interface Params {
   params: Promise<{
@@ -17,77 +23,163 @@ interface Params {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const { wsId, unitId: id } = await params;
-  // Check permissions
-  const permissions = await getPermissions({ wsId });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
-  const { containsPermission } = permissions;
-  if (!containsPermission('update_inventory')) {
+  const { wsId: id, unitId } = await params;
+  const authorization = await authorizeInventoryWorkspace(req, id);
+  if (!authorization.ok) return authorization.response;
+
+  const sbAdmin = await createAdminClient();
+  const { permissions, wsId } = authorization.value;
+
+  if (!canManageInventorySetup(permissions)) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update units' },
       { status: 403 }
     );
   }
 
-  const supabase = await createClient(req);
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  if (!(await isInventoryEnabled(normalizedWsId))) {
-    return inventoryNotFoundResponse();
+  const parsed = UnitUpdateSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: 'Invalid request body', errors: parsed.error.issues },
+      { status: 400 }
+    );
   }
 
-  const data = await req.json();
-
-  const { error } = await supabase
+  const { data: existing, error: existingError } = await sbAdmin
     .from('inventory_units')
-    .update(data)
-    .eq('id', id);
+    .select('*')
+    .eq('id', unitId)
+    .eq('ws_id', wsId)
+    .maybeSingle();
 
-  if (error) {
-    console.log(error);
+  if (existingError) {
+    serverLogger.error('Error loading product unit for update', existingError);
     return NextResponse.json(
-      { message: 'Error updating product category' },
+      { message: 'Error loading product unit for update' },
       { status: 500 }
     );
   }
 
-  return NextResponse.json({ message: 'success' });
+  if (!existing) {
+    return NextResponse.json({ message: 'Unit not found' }, { status: 404 });
+  }
+
+  const { data, error } = await sbAdmin
+    .from('inventory_units')
+    .update(parsed.data)
+    .eq('id', unitId)
+    .eq('ws_id', wsId)
+    .select('*')
+    .single();
+
+  if (error) {
+    serverLogger.error('Error updating product unit', error);
+    return NextResponse.json(
+      { message: 'Error updating product unit' },
+      { status: 500 }
+    );
+  }
+
+  await createInventoryAuditLog(sbAdmin, {
+    wsId,
+    eventKind: 'updated',
+    entityKind: 'unit',
+    entityId: data.id,
+    entityLabel: data.name,
+    summary: `Updated unit ${data.name}`,
+    changedFields: diffInventoryAuditFields(existing, data),
+    before: existing,
+    after: data,
+    actor: await getInventoryActorContext(req, wsId),
+  });
+
+  return NextResponse.json({ message: 'success', data });
 }
 
 export async function DELETE(req: Request, { params }: Params) {
-  const { wsId, unitId: id } = await params;
-  // Check permissions
-  const permissions = await getPermissions({ wsId });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
-  const { containsPermission } = permissions;
-  if (!containsPermission('delete_inventory')) {
+  const { wsId: id, unitId } = await params;
+  const authorization = await authorizeInventoryWorkspace(req, id);
+  if (!authorization.ok) return authorization.response;
+
+  const sbAdmin = await createAdminClient();
+  const { permissions, wsId } = authorization.value;
+
+  if (!canManageInventorySetup(permissions)) {
     return NextResponse.json(
       { message: 'Insufficient permissions to delete units' },
       { status: 403 }
     );
   }
 
-  const supabase = await createClient(req);
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  if (!(await isInventoryEnabled(normalizedWsId))) {
-    return inventoryNotFoundResponse();
-  }
-
-  const { error } = await supabase
+  const { data: existing, error: existingError } = await sbAdmin
     .from('inventory_units')
-    .delete()
-    .eq('id', id);
+    .select('*')
+    .eq('id', unitId)
+    .eq('ws_id', wsId)
+    .maybeSingle();
 
-  if (error) {
-    console.log(error);
+  if (existingError) {
+    serverLogger.error(
+      'Error loading product unit for deletion',
+      existingError
+    );
     return NextResponse.json(
-      { message: 'Error deleting product category' },
+      { message: 'Error loading product unit for deletion' },
       { status: 500 }
     );
   }
+
+  if (!existing) {
+    return NextResponse.json({ message: 'Unit not found' }, { status: 404 });
+  }
+
+  const { data: linkedProducts, error: linkedProductsError } = await sbAdmin
+    .from('inventory_products')
+    .select('product_id')
+    .eq('unit_id', unitId)
+    .limit(1);
+
+  if (linkedProductsError) {
+    serverLogger.error(
+      'Error validating product unit usage',
+      linkedProductsError
+    );
+    return NextResponse.json(
+      { message: 'Failed to validate unit usage' },
+      { status: 500 }
+    );
+  }
+
+  if ((linkedProducts ?? []).length > 0) {
+    return NextResponse.json(
+      { message: 'Cannot delete unit while products are assigned to it' },
+      { status: 409 }
+    );
+  }
+
+  const { error } = await sbAdmin
+    .from('inventory_units')
+    .delete()
+    .eq('id', unitId)
+    .eq('ws_id', wsId);
+
+  if (error) {
+    serverLogger.error('Error deleting product unit', error);
+    return NextResponse.json(
+      { message: 'Error deleting product unit' },
+      { status: 500 }
+    );
+  }
+
+  await createInventoryAuditLog(sbAdmin, {
+    wsId,
+    eventKind: 'deleted',
+    entityKind: 'unit',
+    entityId: existing.id,
+    entityLabel: existing.name,
+    summary: `Deleted unit ${existing.name}`,
+    actor: await getInventoryActorContext(req, wsId),
+  });
 
   return NextResponse.json({ message: 'success' });
 }
