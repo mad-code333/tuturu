@@ -32,7 +32,7 @@ export default async function CmsLibraryPage({ params, searchParams }: Props) {
 
   return (
     <CmsStudioClient
-      availableEditSections={['entries', 'content-model', 'workflow']}
+      availableEditSections={['entries', 'workflow']}
       binding={access.binding}
       cmsGamesEnabled={cmsGamesEnabled}
       headerDescription={t('epm.library_page_description')}
