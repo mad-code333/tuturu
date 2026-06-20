@@ -36,6 +36,7 @@ type QuestionType =
   | 'true_false'
   | 'matching'
   | 'ordering'
+  | 'paragraph'
   | 'mix';
 
 export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
@@ -202,6 +203,9 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
                   </SelectItem>
                   <SelectItem value="ordering">
                     {t('ws-quizzes.ordering')}
+                  </SelectItem>
+                  <SelectItem value="paragraph">
+                    {t('ws-quizzes.paragraph') || 'Paragraph'}
                   </SelectItem>
                 </SelectContent>
               </Select>
