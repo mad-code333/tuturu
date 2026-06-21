@@ -9,7 +9,7 @@ export default async function StorefrontCartPage({
   const { storeSlug } = await params;
   return (
     <StorefrontClient
-      headerActions={<StorefrontHeaderActions />}
+      headerActions={<StorefrontHeaderActions storeSlug={storeSlug} />}
       mode="cart"
       storeSlug={storeSlug}
     />
