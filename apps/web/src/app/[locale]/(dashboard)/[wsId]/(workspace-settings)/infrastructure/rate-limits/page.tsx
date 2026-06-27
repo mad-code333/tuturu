@@ -1,8 +1,10 @@
 import { Gauge } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { enforceInfrastructureRootWorkspace } from '../enforce-infrastructure-root';
@@ -42,6 +44,11 @@ export default async function InfrastructureRateLimitsPage({ params }: Props) {
           </div>
           <p className="text-foreground/80">{t('description')}</p>
         </div>
+        <Button asChild type="button" variant="secondary">
+          <Link href={`/${wsId}/infrastructure/rate-limit-appeals`}>
+            {t('actions.open_appeals')}
+          </Link>
+        </Button>
       </div>
 
       <Separator className="my-4" />
