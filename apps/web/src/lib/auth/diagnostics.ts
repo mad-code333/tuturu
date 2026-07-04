@@ -1,8 +1,4 @@
 import { randomBytes } from 'node:crypto';
-import {
-  type LogDrainLevel,
-  serverLogger,
-} from '@/lib/infrastructure/log-drain';
 
 export type AuthDiagnosticStage =
   | 'account_list'
@@ -12,6 +8,9 @@ export type AuthDiagnosticStage =
   | 'account_save'
   | 'account_switch'
   | 'account_update'
+  | 'auth_recovery'
+  | 'auth_recovery_confirm'
+  | 'auth_recovery_consume'
   | 'oauth_callback_exchange'
   | 'otp_send'
   | 'otp_settings'
@@ -26,6 +25,7 @@ type ReturnUrlKind =
   | 'missing'
   | 'same-origin'
   | 'unsupported';
+type AuthDiagnosticLevel = 'error' | 'warn';
 
 const AUTH_DIAGNOSTIC_PREFIXES: Record<AuthDiagnosticStage, string> = {
   account_list: 'AUTH-ACC-LIST',
@@ -35,6 +35,9 @@ const AUTH_DIAGNOSTIC_PREFIXES: Record<AuthDiagnosticStage, string> = {
   account_save: 'AUTH-ACC-SAVE',
   account_switch: 'AUTH-ACC-SWITCH',
   account_update: 'AUTH-ACC-UPDATE',
+  auth_recovery: 'AUTH-RECOVERY',
+  auth_recovery_confirm: 'AUTH-RECOVERY-CONFIRM',
+  auth_recovery_consume: 'AUTH-RECOVERY-CONSUME',
   oauth_callback_exchange: 'AUTH-OAUTH',
   otp_send: 'AUTH-OTP-SEND',
   otp_settings: 'AUTH-OTP-SETTINGS',
@@ -101,7 +104,7 @@ export function logAuthDiagnostic({
   client?: string | null;
   code: string;
   error?: unknown;
-  level?: Extract<LogDrainLevel, 'error' | 'warn'>;
+  level?: AuthDiagnosticLevel;
   message: string;
   platform?: string | null;
   request?: Request;
@@ -110,7 +113,9 @@ export function logAuthDiagnostic({
   stage: AuthDiagnosticStage;
   status?: number;
 }) {
-  serverLogger[level](message, {
+  const log = level === 'warn' ? console.warn : console.error;
+
+  log(message, {
     authMethod,
     client: client || undefined,
     diagnosticCode: code,

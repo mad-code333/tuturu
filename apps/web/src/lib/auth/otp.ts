@@ -6,6 +6,7 @@ import {
 import {
   isTurnstileError,
   resolveTurnstileToken,
+  verifyTurnstileToken,
 } from '@tuturuuu/turnstile/server';
 import {
   checkOTPSendAllowed,
@@ -38,6 +39,7 @@ import {
   type MobilePlatform,
 } from '@/lib/mobile-version-policy';
 import { shouldBypassSupabaseAuthCaptchaForDev } from './local-e2e';
+import { prepareNormalAuthRecoveryOverrideUse } from './recovery';
 
 export const OTP_UNAVAILABLE_ERROR =
   'Verification code sign-in is unavailable right now.';
@@ -230,6 +232,26 @@ function createGenericVerifyErrorResult(status = 400): OtpFailureResult {
   };
 }
 
+function readHeadersLike(headers: HeadersLike, name: string) {
+  if (headers instanceof Headers || headers instanceof Map) {
+    return headers.get(name) ?? headers.get(name.toLowerCase()) ?? null;
+  }
+
+  return headers[name] ?? headers[name.toLowerCase()] ?? null;
+}
+
+function createTurnstileRequest(context: OtpRequestContext) {
+  if (context.request) {
+    return context.request;
+  }
+
+  return {
+    headers: {
+      get: (name: string) => readHeadersLike(context.headers, name),
+    },
+  };
+}
+
 export async function getPublicOtpSettings({
   client,
   platform,
@@ -272,11 +294,58 @@ export async function sendOtp(
   }
   const ipAddress = suspiciousAgentCheck.ipAddress;
   const userAgent = suspiciousAgentCheck.userAgent;
-
-  const abuseCheck = await checkOTPSendAllowed(ipAddress, validatedEmail, {
-    route: context.endpoint,
-    source: 'otp-send',
+  const recoveryOverride = await prepareNormalAuthRecoveryOverrideUse({
+    email: validatedEmail,
+    metadata: {
+      client: input.client,
+      platform: input.platform,
+      stage: 'otp_send',
+    },
   });
+
+  if (!recoveryOverride) {
+    const infrastructureCheck =
+      await checkEmailInfrastructureBlocked(validatedEmail);
+    if (infrastructureCheck.isBlocked) {
+      await logAbuseEvent(ipAddress, 'otp_send', {
+        email: validatedEmail,
+        endpoint: context.endpoint,
+        success: false,
+        userAgent: userAgent || undefined,
+        metadata: {
+          blockType: infrastructureCheck.blockType,
+          client: input.client,
+          platform: input.platform,
+          stage: 'infrastructure_block',
+          uaMatchedPattern: suspiciousAgentCheck.classification.matchedPattern,
+          uaReason: suspiciousAgentCheck.classification.reason,
+          uaRiskLevel: suspiciousAgentCheck.classification.riskLevel,
+        },
+      });
+      return createGenericSendErrorResult();
+    }
+  }
+
+  const turnstile = resolveTurnstileToken({
+    devMode: shouldBypassSupabaseAuthCaptchaForDev(),
+    token: input.captchaToken,
+    requireConfiguration: true,
+  });
+  if (!turnstile.shouldBypassForDev) {
+    await verifyTurnstileToken(
+      createTurnstileRequest(context),
+      turnstile.captchaToken
+    );
+  }
+
+  const abuseCheck = await checkOTPSendAllowed(
+    ipAddress,
+    recoveryOverride ? undefined : validatedEmail,
+    {
+      route: context.endpoint,
+      source: 'otp-send',
+    }
+  );
   if (!abuseCheck.allowed) {
     return {
       body: {
@@ -288,32 +357,6 @@ export async function sendOtp(
     };
   }
 
-  const infrastructureCheck =
-    await checkEmailInfrastructureBlocked(validatedEmail);
-  if (infrastructureCheck.isBlocked) {
-    await logAbuseEvent(ipAddress, 'otp_send', {
-      email: validatedEmail,
-      endpoint: context.endpoint,
-      success: false,
-      userAgent: userAgent || undefined,
-      metadata: {
-        blockType: infrastructureCheck.blockType,
-        client: input.client,
-        platform: input.platform,
-        stage: 'infrastructure_block',
-        uaMatchedPattern: suspiciousAgentCheck.classification.matchedPattern,
-        uaReason: suspiciousAgentCheck.classification.reason,
-        uaRiskLevel: suspiciousAgentCheck.classification.riskLevel,
-      },
-    });
-    return createGenericSendErrorResult();
-  }
-
-  const turnstile = resolveTurnstileToken({
-    devMode: shouldBypassSupabaseAuthCaptchaForDev(),
-    token: input.captchaToken,
-    requireConfiguration: true,
-  });
   const supabase = turnstile.shouldBypassForDev
     ? await createAdminClient()
     : await createClient(context.request);
@@ -418,10 +461,24 @@ export async function verifyOtp(
     };
   }
   const ipAddress = suspiciousAgentCheck.ipAddress;
-  const abuseCheck = await checkOTPVerifyLimit(ipAddress, validatedEmail, {
-    route: context.endpoint,
-    source: 'otp-verify',
+  const recoveryOverride = await prepareNormalAuthRecoveryOverrideUse({
+    email: validatedEmail,
+    metadata: {
+      client: input.client,
+      platform: input.platform,
+      stage: 'otp_verify',
+    },
   });
+  const abuseCheck = await checkOTPVerifyLimit(
+    ipAddress,
+    recoveryOverride
+      ? 'auth-recovery-ip-only@tuturuuu.invalid'
+      : validatedEmail,
+    {
+      route: context.endpoint,
+      source: 'otp-verify',
+    }
+  );
   if (!abuseCheck.allowed) {
     return {
       body: {
@@ -457,7 +514,12 @@ export async function verifyOtp(
   });
 
   if (error) {
-    await recordOTPVerifyFailure(ipAddress, validatedEmail);
+    await recordOTPVerifyFailure(
+      ipAddress,
+      recoveryOverride
+        ? 'auth-recovery-ip-only@tuturuuu.invalid'
+        : validatedEmail
+    );
     return createGenericVerifyErrorResult();
   }
 

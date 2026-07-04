@@ -8,8 +8,7 @@ import type {
   InfrastructureStressTestStatus,
   InfrastructureStressTestTarget,
   QueueInfrastructureStressTestPayload,
-} from '@tuturuuu/internal-api/infrastructure';
-import { serverLogger } from './log-drain';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 import {
   computeStressTestResourceSpikes,
   summarizeStressTestSamples,
@@ -143,7 +142,7 @@ export function getStressTestTargets(): InfrastructureStressTestTarget[] {
         : [];
       if (targets.length > 0) return targets;
     } catch {
-      serverLogger.warn('Invalid stress-test target allowlist configuration');
+      console.warn('Invalid stress-test target allowlist configuration');
     }
   }
 

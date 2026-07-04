@@ -57,6 +57,7 @@ const mocks = vi.hoisted(() => {
     getWebOtpEnabledConfig: vi.fn(),
     isTurnstileError: vi.fn(),
     logAbuseEvent: vi.fn(),
+    prepareNormalAuthRecoveryOverrideUse: vi.fn(),
     recordOTPSendSuccess: vi.fn(),
     recordOTPVerifyFailure: vi.fn(),
     requestClient,
@@ -68,6 +69,7 @@ const mocks = vi.hoisted(() => {
     shouldBypassSupabaseAuthCaptchaForDev: vi.fn(),
     validateEmail: vi.fn(),
     validateOtp: vi.fn(),
+    verifyTurnstileToken: vi.fn(),
   };
 });
 
@@ -87,6 +89,9 @@ vi.mock('@tuturuuu/turnstile/server', () => ({
   resolveTurnstileToken: (
     ...args: Parameters<typeof mocks.resolveTurnstileToken>
   ) => mocks.resolveTurnstileToken(...args),
+  verifyTurnstileToken: (
+    ...args: Parameters<typeof mocks.verifyTurnstileToken>
+  ) => mocks.verifyTurnstileToken(...args),
 }));
 
 vi.mock('@tuturuuu/utils/abuse-protection', () => ({
@@ -148,6 +153,12 @@ vi.mock('./local-e2e', () => ({
   ) => mocks.shouldBypassSupabaseAuthCaptchaForDev(...args),
 }));
 
+vi.mock('./recovery', () => ({
+  prepareNormalAuthRecoveryOverrideUse: (
+    ...args: Parameters<typeof mocks.prepareNormalAuthRecoveryOverrideUse>
+  ) => mocks.prepareNormalAuthRecoveryOverrideUse(...args),
+}));
+
 describe('otp auth service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -181,9 +192,12 @@ describe('otp auth service', () => {
     mocks.checkIfUserExists.mockResolvedValue('user-1');
     mocks.generateRandomPassword.mockReturnValue('random-password');
     mocks.resolveTurnstileToken.mockReturnValue({
+      captchaToken: 'captcha-token',
       captchaOptions: { captchaToken: 'captcha-token' },
       shouldBypassForDev: false,
     });
+    mocks.verifyTurnstileToken.mockResolvedValue(undefined);
+    mocks.prepareNormalAuthRecoveryOverrideUse.mockResolvedValue(null);
     mocks.shouldBypassSupabaseAuthCaptchaForDev.mockReturnValue(false);
     mocks.createClient.mockResolvedValue(mocks.requestClient);
     mocks.createAdminClient.mockResolvedValue(mocks.adminClient);
@@ -231,6 +245,18 @@ describe('otp auth service', () => {
     });
     expect(mocks.createAdminClient).not.toHaveBeenCalled();
     expect(mocks.adminUpdateUserById).not.toHaveBeenCalled();
+    expect(mocks.verifyTurnstileToken).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: expect.any(Object),
+      }),
+      'captcha-token'
+    );
+    expect(mocks.verifyTurnstileToken.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.checkOTPSendAllowed.mock.invocationCallOrder[0]!
+    );
+    expect(mocks.checkOTPSendAllowed.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.requestSignInWithOtp.mock.invocationCallOrder[0]!
+    );
     expect(mocks.requestSignInWithOtp).toHaveBeenCalledWith({
       email: 'person@example.com',
       options: {
@@ -243,6 +269,86 @@ describe('otp auth service', () => {
         },
       },
     });
+  });
+
+  it('does not send OTP when server-side Turnstile verification fails', async () => {
+    const turnstileError = new Error('Turnstile verification failed');
+    mocks.verifyTurnstileToken.mockRejectedValueOnce(turnstileError);
+
+    const { sendOtp } = await import('./otp');
+
+    await expect(
+      sendOtp(
+        {
+          captchaToken: 'captcha-token',
+          client: 'web',
+          email: 'person@example.com',
+          locale: 'en',
+        },
+        {
+          client: 'web',
+          endpoint: '/api/v1/auth/otp/send',
+          headers: new Headers(),
+        }
+      )
+    ).rejects.toBe(turnstileError);
+
+    expect(mocks.requestSignInWithOtp).not.toHaveBeenCalled();
+    expect(mocks.requestSignUp).not.toHaveBeenCalled();
+    expect(mocks.checkOTPSendAllowed).not.toHaveBeenCalled();
+    expect(mocks.recordOTPSendSuccess).not.toHaveBeenCalled();
+  });
+
+  it('uses an active auth recovery override to bypass email-scoped OTP send blockers only', async () => {
+    const { sendOtp } = await import('./otp');
+
+    mocks.prepareNormalAuthRecoveryOverrideUse.mockResolvedValue({
+      allowNormalLogin: true,
+      allowRecoveryEmail: true,
+      email: 'person@example.com',
+      id: 'override-1',
+    });
+    mocks.checkEmailInfrastructureBlocked.mockResolvedValue({
+      blockType: 'blacklist',
+      isBlocked: true,
+    });
+
+    const result = await sendOtp(
+      {
+        captchaToken: 'captcha-token',
+        client: 'web',
+        email: 'person@example.com',
+        locale: 'en',
+      },
+      {
+        client: 'web',
+        endpoint: '/api/v1/auth/otp/send',
+        headers: new Headers(),
+      }
+    );
+
+    expect(result).toEqual({
+      body: { success: true },
+      status: 200,
+    });
+    expect(mocks.prepareNormalAuthRecoveryOverrideUse).toHaveBeenCalledWith({
+      email: 'person@example.com',
+      metadata: {
+        client: 'web',
+        platform: undefined,
+        stage: 'otp_send',
+      },
+    });
+    expect(mocks.checkEmailInfrastructureBlocked).not.toHaveBeenCalled();
+    expect(mocks.checkOTPSendAllowed).toHaveBeenCalledWith(
+      '1.2.3.4',
+      undefined,
+      {
+        route: '/api/v1/auth/otp/send',
+        source: 'otp-send',
+      }
+    );
+    expect(mocks.verifyTurnstileToken).toHaveBeenCalled();
   });
 
   it('updates user metadata after a successful OTP verification', async () => {

@@ -5,6 +5,10 @@ import {
   getAppSessionTokenFromRequest,
   verifyAppSessionRequest,
 } from '@tuturuuu/auth/app-session';
+import {
+  CLI_APP_ACCESS_SCOPE,
+  CLI_APP_TARGET_APP,
+} from '@tuturuuu/auth/cli-session';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import {
@@ -14,6 +18,7 @@ import {
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import {
   type BlockInfo,
+  buildAbuseRiskSubjects,
   extractIPFromHeaders,
   isIPBlocked,
   recordApiAuthFailure,
@@ -22,6 +27,7 @@ import {
   cascadeBackendRateLimitToProxyBan,
   isBackendRateLimitError,
 } from '@tuturuuu/utils/abuse-protection/backend-rate-limit';
+import { writeVerifiedSessionCacheForSubjects } from '@tuturuuu/utils/abuse-protection/edge-trust';
 import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
 import { hasAuthenticatedApiSession } from '@tuturuuu/utils/api-proxy-guard';
 import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
@@ -56,6 +62,24 @@ function buildIpBlockResponse(blockInfo: BlockInfo) {
   );
 }
 
+function writeVerifiedSessionCacheForRequest(
+  request: Pick<NextRequest, 'headers'>,
+  userId: string
+) {
+  const subjects = buildAbuseRiskSubjects({
+    headers: request.headers,
+    ipAddress: extractIPFromHeaders(request.headers),
+    userId,
+  });
+  const sessionSubjectKeys = subjects
+    .filter((subject) => subject.subject_type === 'session')
+    .map((subject) => subject.subject_key);
+
+  if (sessionSubjectKeys.length > 0) {
+    void writeVerifiedSessionCacheForSubjects(sessionSubjectKeys);
+  }
+}
+
 /**
  * @deprecated Use `withSessionAuth` instead for new routes.
  * Kept for backward compatibility during migration.
@@ -87,6 +111,8 @@ export async function authorizeRequest(
       error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
     };
   }
+
+  writeVerifiedSessionCacheForRequest(request, user.id);
 
   return { data: { user, supabase }, error: null };
 }
@@ -155,14 +181,15 @@ export interface SessionAuthContext {
   supabase: TypedSupabaseClient;
 }
 
+type StrictAppSessionAuthOptions = {
+  requiredScope?: string | false;
+  targetApp?: AppSessionTargetApp | readonly AppSessionTargetApp[];
+};
+
 type AppSessionAuthOptions =
   | boolean
-  | {
-      requiredScope?: string | false;
-      targetApp?: AppSessionTargetApp | readonly AppSessionTargetApp[];
-    };
-
-type StrictAppSessionAuthOptions = Exclude<AppSessionAuthOptions, boolean>;
+  | StrictAppSessionAuthOptions
+  | readonly StrictAppSessionAuthOptions[];
 
 const LEARN_TEACH_APP_SESSION_TARGETS = ['learn', 'teach'] as const;
 const ALL_SATELLITE_APP_SESSION_TARGETS = [
@@ -285,11 +312,45 @@ export function getDefaultAppSessionVerificationOptions(
 
 function getAppSessionVerificationOptions(
   request: Pick<NextRequest, 'url'>,
-  allowAppSessionAuth: true | StrictAppSessionAuthOptions
-) {
-  return allowAppSessionAuth === true
-    ? getDefaultAppSessionVerificationOptions(request.url)
-    : allowAppSessionAuth;
+  allowAppSessionAuth:
+    | true
+    | StrictAppSessionAuthOptions
+    | readonly StrictAppSessionAuthOptions[]
+): readonly StrictAppSessionAuthOptions[] {
+  if (allowAppSessionAuth === true) {
+    return [getDefaultAppSessionVerificationOptions(request.url)];
+  }
+
+  return isAppSessionAuthOptionsList(allowAppSessionAuth)
+    ? allowAppSessionAuth
+    : [allowAppSessionAuth];
+}
+
+function isAppSessionAuthOptionsList(
+  value: StrictAppSessionAuthOptions | readonly StrictAppSessionAuthOptions[]
+): value is readonly StrictAppSessionAuthOptions[] {
+  return Array.isArray(value);
+}
+
+function verifyConfiguredAppSessionRequest(
+  request: Pick<NextRequest, 'headers' | 'url'>,
+  allowAppSessionAuth:
+    | true
+    | StrictAppSessionAuthOptions
+    | readonly StrictAppSessionAuthOptions[]
+): Extract<ReturnType<typeof verifyAppSessionRequest>, { ok: true }> | null {
+  for (const verificationOptions of getAppSessionVerificationOptions(
+    request,
+    allowAppSessionAuth
+  )) {
+    const verification = verifyAppSessionRequest(request, verificationOptions);
+
+    if (verification.ok) {
+      return verification;
+    }
+  }
+
+  return null;
 }
 
 async function resolveAuthenticatedUser(supabase: TypedSupabaseClient) {
@@ -320,12 +381,12 @@ export async function resolveSessionAuthContext(
     const appSessionToken = getAppSessionTokenFromRequest(request);
 
     if (appSessionToken) {
-      const appSessionVerification = verifyAppSessionRequest(
+      const appSessionVerification = verifyConfiguredAppSessionRequest(
         request,
-        getAppSessionVerificationOptions(request, options.allowAppSessionAuth)
+        options.allowAppSessionAuth
       );
 
-      if (!appSessionVerification.ok) {
+      if (!appSessionVerification) {
         return {
           ok: false,
           response: NextResponse.json(
@@ -342,6 +403,8 @@ export async function resolveSessionAuthContext(
         userEmail: appSessionUser.email,
         userId: appSessionUser.id,
       });
+
+      writeVerifiedSessionCacheForRequest(request, appSessionUser.id);
 
       return {
         ok: true,
@@ -365,6 +428,8 @@ export async function resolveSessionAuthContext(
       response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
     };
   }
+
+  writeVerifiedSessionCacheForRequest(request, user.id);
 
   return {
     ok: true,
@@ -423,9 +488,26 @@ interface SessionAuthOptions {
    * explicit because the Supabase client is admin-backed.
    */
   allowAppSessionAuth?: AppSessionAuthOptions;
+  /**
+   * Allows verified app-session requests to skip browser step-up challenges.
+   * Use only for server-to-server routes that are protected by explicit scopes.
+   */
+  skipAppSessionStepUpChallenge?: boolean;
 }
 
 type SessionAdaptiveAuthKind = 'app-session' | 'session' | 'temp';
+
+function isCliAppSessionClaims(claims: {
+  origin_app?: string | null;
+  scopes?: readonly string[];
+  target_app?: string | null;
+}) {
+  return (
+    claims.origin_app === 'cli' &&
+    claims.target_app === CLI_APP_TARGET_APP &&
+    claims.scopes?.includes(CLI_APP_ACCESS_SCOPE) === true
+  );
+}
 
 function getUserCreatedAt(user: SupabaseUser) {
   return (user as SupabaseUser & { created_at?: string | null }).created_at;
@@ -438,6 +520,7 @@ async function applyAdaptiveSessionControls({
   isRead,
   rateLimit,
   request,
+  skipStepUpChallenge = false,
   user,
 }: {
   authKind: SessionAdaptiveAuthKind;
@@ -446,6 +529,7 @@ async function applyAdaptiveSessionControls({
   isRead: boolean;
   rateLimit: RateLimitConfig | false | undefined;
   request: NextRequest;
+  skipStepUpChallenge?: boolean;
   user: SupabaseUser;
 }): Promise<{
   decision: Awaited<ReturnType<typeof resolveWebAbuseDecision>>;
@@ -463,18 +547,20 @@ async function applyAdaptiveSessionControls({
     userId: user.id,
   });
 
-  const challengeResponse = await enforceAdaptiveStepUpChallenge({
-    decision,
-    ipAddress,
-    isRead,
-    method: request.method,
-    request,
-    route: endpoint,
-    userId: user.id,
-  });
+  if (!skipStepUpChallenge) {
+    const challengeResponse = await enforceAdaptiveStepUpChallenge({
+      decision,
+      ipAddress,
+      isRead,
+      method: request.method,
+      request,
+      route: endpoint,
+      userId: user.id,
+    });
 
-  if (challengeResponse) {
-    return { decision, headers: {}, response: challengeResponse };
+    if (challengeResponse) {
+      return { decision, headers: {}, response: challengeResponse };
+    }
   }
 
   const config = rateLimit ?? (isRead ? false : DEFAULT_MUTATE_RATE_LIMIT);
@@ -700,12 +786,12 @@ export function withSessionAuth<T = unknown>(
       const appSessionToken = getAppSessionTokenFromRequest(request);
 
       if (appSessionToken) {
-        const appSessionVerification = verifyAppSessionRequest(
+        const appSessionVerification = verifyConfiguredAppSessionRequest(
           request,
-          getAppSessionVerificationOptions(request, options.allowAppSessionAuth)
+          options.allowAppSessionAuth
         );
 
-        if (!appSessionVerification.ok) {
+        if (!appSessionVerification) {
           return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -752,6 +838,9 @@ export function withSessionAuth<T = unknown>(
           isRead,
           rateLimit: options?.rateLimit,
           request,
+          skipStepUpChallenge:
+            options?.skipAppSessionStepUpChallenge === true ||
+            isCliAppSessionClaims(appSessionVerification.claims),
           user: appSessionUser,
         });
         if (adaptiveControls.response) {
