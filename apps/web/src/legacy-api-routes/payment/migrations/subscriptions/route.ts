@@ -1,14 +1,14 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
-import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
-import { createFreeSubscription } from '@/utils/subscription-helper';
+import { getOrCreatePolarCustomer } from '@tuturuuu/payment-core/customer-helper';
 import {
   createNDJSONStream,
   fetchAllRows,
   upsertSubscriptionError,
   verifyAdminAccess,
-} from '../helper';
+} from '@tuturuuu/payment-core/migrations-helper';
+import { createFreeSubscription } from '@tuturuuu/payment-core/subscription-helper';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { NextResponse } from 'next/server';
 
 export async function POST() {
   const auth = await verifyAdminAccess();

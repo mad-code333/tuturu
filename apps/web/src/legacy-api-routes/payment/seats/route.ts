@@ -1,4 +1,5 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import { SEAT_ACTIVE_STATUSES } from '@tuturuuu/payment-core/subscription-constants';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -7,7 +8,6 @@ import {
 import type { WorkspaceSubscriptionProduct } from '@tuturuuu/types/db';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { SEAT_ACTIVE_STATUSES } from '@/utils/subscription-constants';
 
 /**
  * GET /api/payment/seats?wsId=xxx

@@ -11,16 +11,16 @@ import type {
 } from '@tuturuuu/payment/polar';
 import { Webhooks } from '@tuturuuu/payment/polar/next';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { upsertSubscriptionError } from '@/legacy-api-routes/payment/migrations/helper';
-import { syncOrderToDatabase } from '@/utils/polar-order-helper';
-import { syncProductToDatabase } from '@/utils/polar-product-helper';
-import { assignSeatsToAllMembers } from '@/utils/polar-seat-helper';
-import { syncSubscriptionToDatabase } from '@/utils/polar-subscription-helper';
+import { upsertSubscriptionError } from '@tuturuuu/payment-core/migrations-helper';
+import { syncOrderToDatabase } from '@tuturuuu/payment-core/polar-order-helper';
+import { syncProductToDatabase } from '@tuturuuu/payment-core/polar-product-helper';
+import { assignSeatsToAllMembers } from '@tuturuuu/payment-core/polar-seat-helper';
+import { syncSubscriptionToDatabase } from '@tuturuuu/payment-core/polar-subscription-helper';
 import {
   createFreeSubscription,
   hasActiveSubscription,
-} from '@/utils/subscription-helper';
+} from '@tuturuuu/payment-core/subscription-helper';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 
 // Helper function to report initial seat usage to Polar
 export async function reportInitialUsage(wsId: string, customerId: string) {

@@ -1,12 +1,12 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
 import {
   createNDJSONStream,
   fetchAllRows,
   verifyAdminAccess,
-} from '../../helper';
+} from '@tuturuuu/payment-core/migrations-helper';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { NextResponse } from 'next/server';
 
 const WORKSPACE_CHUNK_SIZE = 200; // Avoid PostgREST URL length limits
 
