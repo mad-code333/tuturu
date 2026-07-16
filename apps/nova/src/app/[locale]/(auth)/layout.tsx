@@ -1,13 +1,11 @@
-import type React from 'react';
+import { NO_INDEX_ROBOTS } from '@tuturuuu/utils/common/metadata';
+import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
 
-interface LayoutProps {
-  children: React.ReactNode;
-}
+export const metadata: Metadata = {
+  robots: NO_INDEX_ROBOTS,
+};
 
-export default async function Layout({ children }: LayoutProps) {
-  return (
-    <div className="h-screen max-h-screen min-h-screen overflow-y-auto">
-      {children}
-    </div>
-  );
+export default function AuthLayout({ children }: { children: ReactNode }) {
+  return children;
 }
