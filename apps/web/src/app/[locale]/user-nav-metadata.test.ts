@@ -1,5 +1,5 @@
+import { resolveUserNavSecondaryLabel } from '@tuturuuu/satellite/user-nav-metadata';
 import { describe, expect, it } from 'vitest';
-import { resolveUserNavSecondaryLabel } from './user-nav-metadata';
 
 const baseInput = {
   email: 'member@example.com',
