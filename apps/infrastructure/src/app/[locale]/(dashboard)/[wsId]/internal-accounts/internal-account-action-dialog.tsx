@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Copy, Eye, EyeOff, Loader2, RefreshCw } from '@tuturuuu/icons';
+import { Check, Copy, Loader2 } from '@tuturuuu/icons';
 import type {
   InternalAccount,
   InternalAccountAction,
@@ -21,7 +21,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { generateSecureTemporaryPassword } from './password-generator';
+import { TemporaryPasswordField } from './temporary-password-field';
 
 const MIN_PASSWORD_LENGTH = 12;
 
@@ -44,7 +44,6 @@ export function InternalAccountActionDialog({
   const [confirmationEmail, setConfirmationEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [passwordResetComplete, setPasswordResetComplete] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { copyToClipboard, isCopied } = useCopyToClipboard({ timeout: 2000 });
 
@@ -64,7 +63,6 @@ export function InternalAccountActionDialog({
       setConfirmationEmail('');
       setNewPassword('');
       setPasswordResetComplete(false);
-      setShowPassword(false);
     }
     onOpenChange(nextOpen);
   }
@@ -137,57 +135,12 @@ export function InternalAccountActionDialog({
         ) : (
           <div className="space-y-4 py-2">
             {selectedAction === 'reset_password' ? (
-              <div className="space-y-2">
-                <Label htmlFor="internal-account-new-password">
-                  {t('dialog.new_password')}
-                </Label>
-                <div className="flex gap-2">
-                  <div className="relative min-w-0 flex-1">
-                    <Input
-                      autoComplete="new-password"
-                      className="pr-10 font-mono"
-                      data-testid="internal-account-new-password"
-                      id="internal-account-new-password"
-                      minLength={MIN_PASSWORD_LENGTH}
-                      onChange={(event) => setNewPassword(event.target.value)}
-                      type={showPassword ? 'text' : 'password'}
-                      value={newPassword}
-                    />
-                    <Button
-                      aria-label={
-                        showPassword
-                          ? t('dialog.hide_password')
-                          : t('dialog.show_password')
-                      }
-                      className="absolute top-1/2 right-1 size-8 -translate-y-1/2"
-                      onClick={() => setShowPassword((value) => !value)}
-                      size="icon"
-                      type="button"
-                      variant="ghost"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="size-4" />
-                      ) : (
-                        <Eye className="size-4" />
-                      )}
-                    </Button>
-                  </div>
-                  <Button
-                    onClick={() => {
-                      setNewPassword(generateSecureTemporaryPassword());
-                      setShowPassword(true);
-                    }}
-                    type="button"
-                    variant="outline"
-                  >
-                    <RefreshCw className="size-4" />
-                    {t('dialog.generate_password')}
-                  </Button>
-                </div>
-                <p className="text-muted-foreground text-xs">
-                  {t('dialog.password_help', { count: MIN_PASSWORD_LENGTH })}
-                </p>
-              </div>
+              <TemporaryPasswordField
+                id="internal-account-new-password"
+                minLength={MIN_PASSWORD_LENGTH}
+                onChange={setNewPassword}
+                value={newPassword}
+              />
             ) : null}
 
             <div className="space-y-2">
