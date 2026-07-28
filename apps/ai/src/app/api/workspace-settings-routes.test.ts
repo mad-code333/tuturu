@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -62,5 +63,16 @@ describe('AI Studio workspace settings routes', () => {
     expect(deleteAvatar).toBe(mocks.avatarDelete);
     expect(createAvatarUpload).toBe(mocks.avatarUploadPost);
     expect(getAiCredits).toBe(mocks.creditsGet);
+  });
+
+  it('preloads the workspace before rendering shared settings panels', () => {
+    const source = readFileSync(
+      new URL('../../components/settings/settings-dialog.tsx', import.meta.url),
+      'utf8'
+    );
+
+    expect(source).toContain('import { getWorkspace }');
+    expect(source).toContain("queryKey: ['workspace', wsId]");
+    expect(source).toContain('workspace={workspace ?? null}');
   });
 });

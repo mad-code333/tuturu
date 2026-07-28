@@ -1,6 +1,8 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { Keyboard, Paintbrush, PanelLeft, User } from '@tuturuuu/icons';
+import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
 import {
   createWorkspaceSettingsNavGroup,
   SatelliteProfileSettingsPanel,
@@ -35,6 +37,12 @@ export function SettingsDialog({
     'EXPAND_SETTINGS_ACCORDIONS',
     true
   );
+  const { data: workspace } = useQuery({
+    enabled: Boolean(wsId),
+    queryFn: () => getWorkspace(wsId ?? ''),
+    queryKey: ['workspace', wsId],
+    staleTime: 5 * 60 * 1000,
+  });
 
   const navItems = [
     ...(wsId ? [createWorkspaceSettingsNavGroup(t)] : []),
@@ -98,6 +106,7 @@ export function SettingsDialog({
       <SatelliteWorkspaceSettingsPanel
         activeTab={activeTab}
         user={user}
+        workspace={workspace ?? null}
         wsId={wsId}
       />
 
